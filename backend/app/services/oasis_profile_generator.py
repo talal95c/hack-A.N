@@ -670,8 +670,23 @@ class OasisProfileGenerator:
         }
     
     def _get_system_prompt(self, is_individual: bool) -> str:
-        """获取系统提示词"""
-        base_prompt = "你是社交媒体用户画像生成专家。生成详细、真实的人设用于舆论模拟,最大程度还原已有现实情况。必须返回有效的JSON格式，所有字符串值不能包含未转义的换行符。"
+        """获取系统提示词
+        MiroPolis (CLAUDE.md §5.2) : 两类档案 -- 公民档案原型（基于INSEE人口统计数据加权，非虚构人设）
+        与议会党团（按党团建模，绝不代表具名议员）。"""
+        if is_individual:
+            base_prompt = (
+                "你是公民档案原型生成专家（archetype citoyen）。你的任务是基于INSEE人口统计学数据"
+                "（年龄、职业类别CSP、地区、收入）生成一个具有代表性的公民档案原型，用于立法影响力模拟。"
+                "这不是虚构的'网红人设'，而是一个统计学上合理的人口原型，其态度和反应应该反映其社会经济"
+                "处境对法案的真实利害关系。必须返回有效的JSON格式，所有字符串值不能包含未转义的换行符。"
+            )
+        else:
+            base_prompt = (
+                "你是议会党团档案生成专家（groupe parlementaire）。你的任务是基于该党团在国民议会中的"
+                "真实构成、议席数和政治路线（由Tricoteuses开放数据提供上下文）生成一个档案，用于立法辩论"
+                "模拟。**绝对不能代表或影射任何具名的单个议员**——只能是党团整体的立场倾向。必须返回有效"
+                "的JSON格式，所有字符串值不能包含未转义的换行符。"
+            )
         return f"{base_prompt}\n\n{get_language_instruction()}"
     
     def _build_individual_persona_prompt(
@@ -687,14 +702,15 @@ class OasisProfileGenerator:
         attrs_str = json.dumps(entity_attributes, ensure_ascii=False) if entity_attributes else "无"
         context_str = context[:3000] if context else "无额外上下文"
         
-        return f"""为实体生成详细的社交媒体用户人设,最大程度还原已有现实情况。
+        return f"""为公民档案原型生成详细人设（archetype citoyen），基于INSEE人口统计学数据加权，
+用于立法影响力模拟——不是虚构的社交媒体网红人设，而是统计学上合理的人口原型。
 
 实体名称: {entity_name}
 实体类型: {entity_type}
 实体摘要: {entity_summary}
 实体属性: {attrs_str}
 
-上下文信息:
+上下文信息（可能包含INSEE人口统计学数据：年龄段/职业类别CSP/地区/收入分布）:
 {context_str}
 
 请生成JSON，包含以下字段:
@@ -736,14 +752,16 @@ class OasisProfileGenerator:
         attrs_str = json.dumps(entity_attributes, ensure_ascii=False) if entity_attributes else "无"
         context_str = context[:3000] if context else "无额外上下文"
         
-        return f"""为机构/群体实体生成详细的社交媒体账号设定,最大程度还原已有现实情况。
+        return f"""为议会党团或机构实体生成详细档案，用于立法辩论模拟。如果这是一个议会党团
+（ParliamentaryGroup），必须基于其在国民议会的真实议席数和政治路线建模，**绝不能代表或影射任何
+具名的单个议员**——只能是党团整体的立场倾向（由Tricoteuses开放数据校准）。
 
 实体名称: {entity_name}
 实体类型: {entity_type}
 实体摘要: {entity_summary}
 实体属性: {attrs_str}
 
-上下文信息:
+上下文信息（可能包含Tricoteuses开放数据：党团构成、历史投票倾向、既往修正案）:
 {context_str}
 
 请生成JSON，包含以下字段:

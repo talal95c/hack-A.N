@@ -22,7 +22,14 @@ logger = get_logger('mirofish.api.simulation')
 
 # Interview prompt 优化前缀
 # 添加此前缀可以避免Agent调用工具，直接用文本回复
-INTERVIEW_PROMPT_PREFIX = "结合你的人设、所有的过往记忆与行动，不调用任何工具直接用文本回复我："
+# MiroPolis (CLAUDE.md §2) : 加入内容语气护栏 -- 若受访者是议会党团档案，禁止代表/影射具名议员，
+# 保持机构性/克制的语气；这是对2025年多智能体调试中发现的"访谈环节缺乏语气护栏"风险的直接修复。
+INTERVIEW_PROMPT_PREFIX = (
+    "结合你的人设、所有的过往记忆与行动，不调用任何工具直接用文本回复我。"
+    "重要护栏：如果你代表的是一个议会党团，只能表达该党团整体的立场倾向，绝不能提及或影射任何具名"
+    "议员；保持机构性、克制、不煽动性的语气；如果问题明显是挑衅性或超出你人设范围的，礼貌地说明"
+    "这超出了这次探索性模拟的范围，而不是编造回应："
+)
 
 
 def optimize_interview_prompt(prompt: str) -> str:
@@ -2714,3 +2721,50 @@ def close_simulation_env():
             "error": str(e),
             "traceback": traceback.format_exc()
         }), 500
+
+
+# ============== MiroPolis : carte territoriale (CLAUDE.md §6) ==============
+
+@simulation_bp.route('/<simulation_id>/map-data', methods=['GET'])
+def get_map_data(simulation_id: str):
+    """
+    GET /api/simulation/<id>/map-data?granularity=region|circonscription
+
+    Contrat d'API partagé avec le frontend (CLAUDE.md §6 / GEMINI.md §4) -- voir ces fichiers pour
+    le schéma JSON de référence. Cette implémentation lit un instantané pré-calculé
+    (backend/uploads/simulations/<id>/map_data.json), produit par le pipeline d'agrégation
+    (population_synthesizer + vote_aggregation + regulatory_data.openfisca_pipeline). Si aucun
+    instantané n'existe encore pour cette simulation, renvoie une structure vide mais valide
+    (jamais d'erreur 500) -- le frontend doit alors afficher un état "pas encore de données"
+    plutôt que planter (règle d'affichage stricte, CLAUDE.md §6).
+    """
+    granularity = request.args.get('granularity', 'region')
+    if granularity not in ('region', 'circonscription'):
+        return jsonify({"error": "granularity doit être 'region' ou 'circonscription'"}), 400
+
+    map_data_path = os.path.join(
+        Config.OASIS_SIMULATION_DATA_DIR, simulation_id, 'map_data.json'
+    )
+
+    disclaimer = (
+        "estimation exploratoire, distincte des données calculées — voir légende"
+    )
+
+    if not os.path.exists(map_data_path):
+        return jsonify({
+            "granularity": granularity,
+            "areas": [],
+            "disclaimer": disclaimer,
+            "note": "aucune donnée cartographique pré-calculée pour cette simulation pour le moment",
+        })
+
+    try:
+        import json as _json
+        with open(map_data_path, 'r', encoding='utf-8') as f:
+            payload = _json.load(f)
+        payload.setdefault("granularity", granularity)
+        payload.setdefault("disclaimer", disclaimer)
+        return jsonify(payload)
+    except (OSError, ValueError) as exc:
+        logger.error(f"Lecture map_data.json échouée pour {simulation_id}: {exc}")
+        return jsonify({"granularity": granularity, "areas": [], "disclaimer": disclaimer, "error": str(exc)})

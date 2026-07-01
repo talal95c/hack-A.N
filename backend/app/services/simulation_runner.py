@@ -413,8 +413,13 @@ class SimulationRunner:
             #   reddit/actions.jsonl  - Reddit 动作日志
             #   simulation.log        - 主进程日志
             
+            # MiroPolis : utilise l'interpréteur Python dédié à OASIS s'il est configuré
+            # (backend/.venv311, cf. Config.OASIS_PYTHON_EXECUTABLE) -- camel-oasis n'est pas
+            # compatible avec Python 3.12, sous lequel tourne potentiellement le process Flask
+            # principal. Repli sur sys.executable si aucun venv dédié n'est détecté.
+            oasis_python = Config.OASIS_PYTHON_EXECUTABLE or sys.executable
             cmd = [
-                sys.executable,  # Python解释器
+                oasis_python,  # Python解释器（专用于OASIS的解释器，见上方注释）
                 script_path,
                 "--config", config_path,  # 使用完整配置文件路径
             ]

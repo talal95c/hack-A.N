@@ -41,7 +41,20 @@ def create_app(config_class=Config):
     
     # 启用CORS
     CORS(app, resources={r"/api/*": {"origins": "*"}})
-    
+
+    # MiroPolis (CLAUDE.md §5) : infrastructure de production -- base de données et authentification.
+    from flask_jwt_extended import JWTManager
+    app.config['JWT_SECRET_KEY'] = config_class.JWT_SECRET_KEY
+    JWTManager(app)
+
+    from .db import init_db
+    try:
+        init_db()
+        if should_log_startup:
+            logger.info("Base de données MiroPolis initialisée (%s)", config_class.DATABASE_URL)
+    except Exception as exc:  # noqa: BLE001 -- ne bloque pas le démarrage si la DB est indisponible
+        logger.error("Échec d'initialisation de la base de données MiroPolis: %s", exc)
+
     # 注册模拟进程清理函数（确保服务器关闭时终止所有模拟进程）
     from .services.simulation_runner import SimulationRunner
     SimulationRunner.register_cleanup()
@@ -63,10 +76,20 @@ def create_app(config_class=Config):
         return response
     
     # 注册蓝图
-    from .api import graph_bp, simulation_bp, report_bp
+    from .api import (
+        graph_bp, simulation_bp, report_bp,
+        backtesting_bp, temporal_bp, comparison_bp, scenarios_bp, auth_bp,
+    )
     app.register_blueprint(graph_bp, url_prefix='/api/graph')
     app.register_blueprint(simulation_bp, url_prefix='/api/simulation')
     app.register_blueprint(report_bp, url_prefix='/api/report')
+    # MiroPolis (CLAUDE.md §6) : nouveaux blueprints, mêmes chemins que le contrat d'API partagé
+    # avec GEMINI.md -- toute modification de préfixe doit être répercutée dans les deux fichiers.
+    app.register_blueprint(backtesting_bp, url_prefix='/api/backtesting')
+    app.register_blueprint(temporal_bp, url_prefix='/api/temporal')
+    app.register_blueprint(comparison_bp, url_prefix='/api/comparison')
+    app.register_blueprint(scenarios_bp, url_prefix='/api/scenarios')
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
     
     # 健康检查
     @app.route('/health')
