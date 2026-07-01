@@ -3,7 +3,7 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-left">
-        <div class="brand" @click="router.push('/')">MIROFISH</div>
+        <div class="brand" @click="router.push('/')">MIROPOLIS</div>
       </div>
       
       <div class="header-center">
@@ -52,7 +52,6 @@
       <div class="panel-wrapper right" :style="rightPanelStyle">
         <!-- Step 1: 图谱构建 -->
         <Step1GraphBuild 
-          v-if="currentStep === 1"
           :currentPhase="currentPhase"
           :projectData="projectData"
           :ontologyProgress="ontologyProgress"
@@ -60,16 +59,6 @@
           :graphData="graphData"
           :systemLogs="systemLogs"
           @next-step="handleNextStep"
-        />
-        <!-- Step 2: 环境搭建 -->
-        <Step2EnvSetup
-          v-else-if="currentStep === 2"
-          :projectData="projectData"
-          :graphData="graphData"
-          :systemLogs="systemLogs"
-          @go-back="handleGoBack"
-          @next-step="handleNextStep"
-          @add-log="addLog"
         />
       </div>
     </main>
@@ -82,7 +71,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import GraphPanel from '../components/GraphPanel.vue'
 import Step1GraphBuild from '../components/Step1GraphBuild.vue'
-import Step2EnvSetup from '../components/Step2EnvSetup.vue'
 import { generateOntology, getProject, buildGraph, getTaskStatus, getGraphData } from '../api/graph'
 import { getPendingUpload, clearPendingUpload } from '../store/pendingUpload'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'

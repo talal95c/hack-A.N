@@ -1,251 +1,216 @@
 # GEMINI.md — MiroPolis ("MiroFish v2"), frontend
 
-Ce fichier oriente Gemini sur le frontend. Le backend est piloté par Claude via CLAUDE.md — le
-contrat d'API en section 6 de ce document est IDENTIQUE à CLAUDE.md §6. Ne jamais diverger sans
-mettre à jour les deux fichiers.
+Ce fichier oriente Gemini sur le frontend. Le backend est piloté par Claude via CLAUDE.md — les
+règles de la section 1 ci-dessous sont IDENTIQUES à CLAUDE.md, à la lettre. Ne jamais diverger sans
+mettre à jour les deux fichiers en même temps.
 
-## 0. À lire en premier — le backend a été recadré, du code frontend est orphelin
+---
 
-Le backend est passé par plusieurs itérations : une version complète à 7 couches (DB, auth,
-comparaison de lois, backtesting, carte de France, moteur temporel à rounds) a été **entièrement
-retirée**. Le backend actuel est volontairement proche de MiroFish original + un agent en plus. En
-regardant le code déjà présent dans `frontend/src/`, plusieurs fichiers correspondent à l'ancienne
-version 7-couches et **n'ont plus d'endpoint backend derrière eux** :
+## 1. Règles backend — à respecter à la lettre pour la cohérence
 
-| Fichier frontend existant | Statut |
-|---|---|
-| `src/api/auth.js`, `src/store/auth.js`, `src/views/LoginView.vue` | **Orphelin** — plus de `/api/auth/*` côté backend, plus de comptes/JWT |
-| `src/api/admin.js`, `src/views/AdminView.vue`, `src/components/AdminUserManagement.vue` | **Orphelin** — pas de gestion d'utilisateurs |
-| `src/api/backtesting.js`, `src/views/BacktestingView.vue`, `src/components/BacktestingDashboard.vue` | **Orphelin** — backtesting retiré |
-| `src/api/comparison.js`, `src/views/ComparisonView.vue`, `src/components/ComparisonDashboard.vue` | **Orphelin** — comparaison de lois retirée |
-| `src/api/map.js`, `src/components/FranceMap.vue` | **Orphelin** — carte de France retirée, plus de `/map-data` |
-| `src/api/scenarios.js` (`reviewScenario`, `publishScenario`, `listScenarios`) | **Orphelin** — plus de workflow de publication ni de DB de scénarios |
-| `src/api/temporal.js` (`getTemporalRounds`, `compareScenarios`, `getBacktestingRuns`, `getUsers`, `updateUserRole`) | **Orphelin en totalité** — l'ancien moteur temporel à rounds/DB n'existe plus |
-| `src/components/ProspectiveTimeline.vue`, `PublishReviewPanel.vue`, `ScenarioLibrary.vue` | **À revoir** — conçus pour l'ancien contrat, ne correspondent plus à `/api/scenario/*` (voir §5) |
+### 1.1 Définition de référence du produit (ne jamais s'en écarter)
 
-**Ne pas continuer à développer ces écrans.** Le nouvel agent de scénario tendanciel (§4-6) a un
-contrat radicalement plus simple (3 sections de texte, pas de rounds/DB/comparaison) — il faut soit
-adapter `ProspectiveTimeline.vue` en un affichage de sections narratives simple (comme
-`Step4Report.vue` affiche déjà le rapport), soit en écrire un nouveau composant léger.
+> Les Députés IA : configurés selon la composition réelle de l'hémicycle et le programme de leur
+> parti. Ils débattent, proposent des amendements et votent sur le texte soumis.
+> Les Citoyens IA : un échantillon représentatif de la population (âge, profession, géographie).
+> Ils réagissent aux débats et évaluent l'impact concret de la loi sur leur quotidien (pouvoir
+> d'achat, environnement, services publics).
+> Grâce à ce jumeau numérique, le législateur peut tester des formulations d'amendements pour
+> maximiser le consensus ou identifier les angles morts d'une réforme.
 
-### 0bis. Il existe actuellement DEUX circuits de navigation en parallèle, un seul doit survivre
+### 1.2 Principes non négociables
 
-En traçant les `router.push` réels dans le code (pas en supposant), il y a deux chaînes de pages
-distinctes et déconnectées :
+- **Jamais d'élu nommé individuellement** — les "Députés" sont toujours des groupes parlementaires.
+- **Vocabulaire imposé** : "estimation exploratoire" / "vote simulé", jamais "prédiction" présentée
+  comme certaine ; "enrichissement par données réelles", jamais "calibration statistique".
+- **Disclaimer visible** partout où un résultat de simulation/scénario est affiché : *"estimation
+  qualitative générée par IA, ne reflète pas la position officielle des groupes parlementaires ni
+  une prédiction fiable de vote réel."*
+- **Zéro emoji dans l'interface.** Strictement interdit dans les boutons, titres, menus ou textes
+  (⚡, 📑, 📄, 🚀, etc.) — interface architecturale, sobre, scientifique, purement textuelle/graphique.
+- **Pas de DB, pas de compte, pas d'auth, pas de file de jobs.** Stockage fichier uniquement,
+  identifiants passés de route en route (pas de liste globale interrogeable côté serveur).
+- **Toute opération longue est asynchrone** : `POST .../generate|build|prepare|start` répond avec
+  un `task_id` immédiatement ; poll un endpoint de statut toutes les ~2s jusqu'à `completed`/`failed`.
+  Un seul mécanisme de polling générique suffit pour toutes les étapes (ontologie, graphe,
+  préparation, simulation, rapport, scénario).
+- **Deux agents indépendants en sortie de simulation**, jamais fusionnés en un seul objet :
+  `ReportAgent` (recap, `report_id`) et `ScenarioAgent` (projection + vote simulé, `scenario_id`).
+  Ils peuvent échouer/se terminer à des moments différents — gérer leur état séparément.
 
-- **Circuit A (hérité de MiroFish, fonctionnel)** : `Home` → `Process` (`/process/:projectId`) →
-  `Simulation` (`/simulation/:simulationId`) → `SimulationRun`
-  (`/simulation/:simulationId/start`) → ... puis plus rien (voir plus bas).
-- **Circuit B (construit pour l'ancienne version 7-couches, orphelin)** : `Home` → `/scenarios`
-  (`ScenariosView` + `ScenarioLibrary.vue`, qui appelle `listScenarios()` → un endpoint qui n'existe
-  plus) → `/process/new` (`NewScenarioWizardView`) → `/scenario-detail/:scenarioId`
-  (`ScenarioDetailView`, un dashboard à onglets avec carte territoriale et "moteur OpenFisca" —
-  fonctionnalités retirées).
+### 1.3 Ce qu'on A (fonctionnalités actives, à qui appartient quoi)
 
-**Les deux boutons de la page d'accueil (`Home.vue`) pointent aujourd'hui vers le Circuit B**
-(`$router.push('/scenarios')` et `$router.push('/comparison')`) — c'est-à-dire que le parcours
-réellement fonctionnel (Circuit A) n'a **plus aucun point d'entrée visible** depuis la landing page
-actuelle.
+| Fonctionnalité | Endpoint(s) | Composant |
+|---|---|---|
+| Upload + ontologie | `POST /api/graph/ontology/generate`, `GET /api/graph/task/<id>` | `Step1GraphBuild.vue` |
+| Construction du graphe | `POST /api/graph/build` | `Step1GraphBuild.vue` |
+| Génération des agents (Députés/Citoyens) | `POST /api/simulation/create`, `/prepare`, `/prepare/status` | `Step2EnvSetup.vue` |
+| Débat multi-agents (OASIS) | `POST /api/simulation/start`, `GET .../run-status`, `.../actions` | `Step3Simulation.vue` |
+| Recap de la simulation | `POST /api/report/generate`, `/generate/status`, `GET /<report_id>` | `Step4Report.vue` |
+| **Scénario tendanciel + vote simulé** | `POST /api/scenario/generate`, `/generate/status`, `GET /<scenario_id>`, `GET /by-simulation/<simulation_id>` | `Step4Scenario.vue` |
+| Interview d'un agent précis | `POST /api/simulation/interview` | `Step5Interaction.vue` |
 
-**Décision à appliquer : garder le Circuit A, supprimer/ignorer le Circuit B.** C'est le circuit
-hérité de MiroFish, le plus proche de ce que le backend expose réellement. Voir §3 pour le circuit
-cible détaillé et la liste des corrections de navigation à appliquer.
+Le vote simulé (`vote_outcome` dans la réponse de `GET /api/scenario/<id>`) est pondéré par les
+577 sièges réels des 12 groupes parlementaires (data.gouv.fr, vérifié) — `null` si le calcul a
+échoué côté backend, à gérer proprement (pas d'erreur affichée, juste l'absence du bloc vote).
 
-Par ailleurs, **`getReportStatus` dans `src/api/report.js` appelle l'endpoint en `GET`, mais le
-backend l'expose en `POST`** (`@report_bp.route('/generate/status', methods=['POST'])`, corps JSON
-`{task_id, simulation_id}`, pas des query params). C'est un vrai bug à corriger, pas une évolution
-de contrat.
+### 1.4 Ce qu'on N'A PAS (ne jamais recoder sans demande explicite)
 
-## 1. Vision
+Comptes/auth/rôles, base de données, file de jobs (Celery), workflow de publication/revue,
+comparaison de deux lois côte à côte, backtesting, carte de France, calcul OpenFisca, données par
+circonscription (DataCirco). Tout ça a été construit une fois puis explicitement retiré (voir
+CLAUDE.md §2 pour l'historique complet) — les fichiers correspondants ont déjà été supprimés du
+frontend (`LoginView.vue`, `AdminView.vue`, `BacktestingView.vue`, `ComparisonView.vue`,
+`ScenariosView.vue`, `ScenarioDetailView.vue`, et les composants/API associés). Si tu retrouves une
+référence à l'un de ces noms quelque part, c'est un reliquat à supprimer, pas une fonctionnalité à
+terminer.
 
-MiroPolis garde l'architecture MiroFish : upload d'un texte de loi → construction d'un graphe de
-connaissances → génération d'agents (Députés = groupes parlementaires réels, Citoyens = archétypes
-INSEE) → simulation multi-agents (débat) → **deux agents indépendants** consomment le résultat :
-un agent de **recap** (`ReportAgent`, existant) et un agent de **scénario tendanciel**
-(`ScenarioAgent`, nouveau).
+---
 
-## 2. Architecture du site
+## 2. Le circuit utilisateur, page par page
 
-### Frontend (Vue 3 + Vite + Vue Router 4)
+Un seul circuit linéaire (vérifié fichier par fichier, pas supposé). Chaque page correspond à une
+route, une vue conteneur (`views/`) et un ou deux composants `Step*.vue` qu'elle héberge. Pour
+chaque page : ce qu'elle affiche/fait, d'où on y arrive, vers où on peut repartir.
+
+### Page 0 — Accueil (`/`, `Home.vue`)
+
+**Contenu/fonction** : page d'entrée, aucun appel API. Un seul bouton d'action.
+**On y arrive** : point de départ, ou clic sur le logo depuis n'importe quelle autre page.
+**On peut aller vers** : `/process/new` (seul bouton présent).
+
+### Page 1 — Nouveau scénario (`/process/new`, `NewScenarioWizardView.vue`)
+
+**Contenu/fonction** : formulaire d'upload (dépôt de fichiers PDF/DOCX/TXT du texte de loi) + un
+petit formulaire texte ("Réglages du scénario" : titre, groupe parlementaire "auteur" indicatif,
+domaine de calcul — **champ obsolète référençant OpenFisca, retiré (§1.4), à nettoyer visuellement
+plus tard**, objectifs prioritaires). Aucun appel API tant qu'on n'a pas soumis : les fichiers sont
+stockés dans `store/pendingUpload.js`.
+**On y arrive** : depuis `Home.vue` (seul point d'entrée) ou clic direct dans `MiroNavbar`.
+**Action de sortie** : `launchSimulation()` remplit `pendingUpload` puis `router.push('/process/start')`
+— qui matche la route dynamique `/process/:projectId` avec `projectId = 'start'`.
+**On peut aller vers** : uniquement `/process/start` (pas de retour possible sauf via le logo).
+
+### Page 2 — Construction du graphe (`/process/:projectId`, `MainView.vue` → `Step1GraphBuild.vue`)
+
+**Contenu/fonction** : si `projectId` vaut `'new'` ou `'start'`, lit `pendingUpload`, appelle
+`POST /api/graph/ontology/generate` (récupère le vrai `project_id`), puis `POST /api/graph/build`.
+Affiche la progression (ontologie proposée : types d'entités = groupes parlementaires/archétypes
+citoyens ; puis le graphe de connaissances construit, visualisé dans `GraphPanel.vue` à gauche).
+
+**⚠️ Code mort à supprimer.** `MainView.vue` contient une branche `currentStep === 2` qui affiche
+`Step2EnvSetup.vue` — **inatteignable en usage normal**, car le vrai bouton de sortie de
+`Step1GraphBuild.vue` (fonction `handleEnterEnvSetup`, pas l'event `next-step`) ne passe jamais par
+cet état : il appelle directement `POST /api/simulation/create` puis navigue vers la route
+`Simulation` (page 3). `Step2EnvSetup.vue` tourne réellement à la page 3, pas ici. La branche
+`currentStep === 2` dans `MainView.vue` (état `currentStep`, gestion `@next-step`/`@go-back` pour ce
+cas précis) est du code mort à supprimer pour éviter toute confusion future entre les deux endroits
+où `Step2EnvSetup.vue` semble utilisé.
+
+**On y arrive** : depuis la page 1 (upload initial), ou en revenant en arrière depuis la page 3.
+**On peut aller vers** : `/simulation/:simulationId` (page 3, une fois le graphe construit) ou `/`.
+
+### Page 3 — Génération des agents (`/simulation/:simulationId`, `SimulationView.vue` → `Step2EnvSetup.vue`)
+
+**Contenu/fonction** : c'est ici, et seulement ici, que `Step2EnvSetup.vue` tourne réellement.
+Appelle `POST /api/simulation/prepare` (génère les profils Députés/Citoyens à partir des données
+réelles Tricoteuses/data.gouv.fr/INSEE, cf. §1.1), poll `POST /api/simulation/prepare/status`,
+affiche la liste des agents générés (`GET /api/simulation/<id>/profiles`). Permet de configurer le
+nombre de rounds (`maxRounds`) avant de lancer le débat.
+**On y arrive** : depuis la page 2 (fin de construction du graphe).
+**On peut aller vers** : retour à `/process/:projectId` (page 2, `handleGoBack`) ; ou avancer vers
+`/simulation/:simulationId/start` (page 4, `handleNextStep`, avec `maxRounds` en query param).
+
+### Page 4 — Débat multi-agents (`/simulation/:simulationId/start`, `SimulationRunView.vue` → `Step3Simulation.vue`)
+
+**Contenu/fonction** : lance `POST /api/simulation/start`, poll `GET .../run-status` et `.../actions`
+pour afficher le débat en temps réel (amendements proposés, soutiens/oppositions des groupes,
+réactions des archétypes citoyens). Moteur OASIS en sous-processus (`.venv311`, transparent ici).
+**On y arrive** : depuis la page 3 (lancement de la simulation).
+**Action de sortie (déjà câblée, `Step3Simulation.vue`, `handleNextStep`)** : une fois le débat
+terminé, appelle `POST /api/report/generate` (`force_regenerate: true`), récupère `report_id`, puis
+`router.push({ name: 'Report', params: { reportId } })`.
+**On peut aller vers** : `/report/:reportId` (page 5) en sortie normale ; retour arrière possible
+vers `/simulation/:simulationId` (page 3).
+
+### Page 5 — Résultats : recap + scénario tendanciel (`/report/:reportId`, `ReportView.vue`)
+
+**Contenu/fonction** : page à deux onglets, tous deux alimentés par le `simulation_id` résolu depuis
+`reportId` (`GET /api/report/<reportId>` → `simulation_id` → `GET /api/simulation/<id>` →
+`project_id` → graphe affiché à gauche via `GraphPanel.vue`) :
+- Onglet "Synthèse des Débats" (`Step4Report.vue`) : le recap déjà généré au moment de la navigation
+  depuis la page 4 (5 sections : synthèse décideur, cartographie des parties prenantes, réactions et
+  positions observées, points de blocage, recommandations).
+- Onglet "Projection dans le temps" (`Step4Scenario.vue`) : **pas généré automatiquement** — bouton
+  "Générer" qui appelle `POST /api/scenario/generate` sur le même `simulation_id`. Affiche ensuite 3
+  sections (état actuel observé, trajectoire tendancielle, points de bascule) **et le vote simulé
+  pondéré par sièges réels** (décompte par groupe parlementaire, résultat adopté/rejeté/incertain).
+
+**On y arrive** : depuis la page 4 automatiquement (recap déjà en cours de génération à l'arrivée).
+**On peut aller vers** : `/interaction/:reportId` (page 6) ; `/` (logo).
+
+### Page 6 — Interaction profonde (`/interaction/:reportId`, `InteractionView.vue` → `Step5Interaction.vue`)
+
+**Contenu/fonction** : même résolution `reportId` → `simulation_id` qu'à la page 5. Permet de choisir
+un agent précis (Député d'un groupe, ou archétype citoyen) et de lui poser une question en direct
+(`POST /api/simulation/interview`, `simulation_id` + `agent_id` + `question`) — réponse générée avec
+la persona de l'agent.
+**On y arrive** : depuis la page 5 uniquement.
+**On peut aller vers** : `/` (logo) ; dernière étape du circuit, pas de suite.
+
+### Schéma récapitulatif
 
 ```
-src/
-├── views/           # une vue par route (voir §3 pour le circuit complet)
-├── components/      # composants réutilisés par plusieurs vues (Step1..Step5, GraphPanel, etc.)
-├── api/             # un fichier par ressource backend, chaque fonction = un appel axios
-├── store/           # état partagé minimal (reactive(), pas de Pinia)
-└── i18n/            # locales/*.json, français prioritaire
+Home (/)
+  -> NewScenarioWizard (/process/new)                     [upload + reglages texte]
+    -> Process (/process/:projectId)                       [Step1GraphBuild : ontologie + graphe]
+      -> Simulation (/simulation/:simulationId)             [Step2EnvSetup : generation agents]
+        -> SimulationRun (/simulation/:simulationId/start)  [Step3Simulation : debat OASIS]
+          -> Report (/report/:reportId)                     [Step4Report + Step4Scenario, 2 onglets]
+            -> Interaction (/interaction/:reportId)         [Step5Interaction : interview]
 ```
 
-Chaque étape du parcours (§3) est un **composant `StepN...vue`** monté dans une vue conteneur
-(`MainView.vue`/`Process.vue`, `SimulationView.vue`, etc.) qui gère la navigation entre étapes et
-conserve l'état de la session (project_id, simulation_id, report_id, scenario_id) soit en props de
-route, soit dans `store/pendingUpload.js` / `store/simulation.js`.
+Chaque flèche est un `router.push` réel déjà présent dans le code (vérifié fichier par fichier), à
+l'exception de la suppression de code mort mentionnée à la Page 2.
 
-### Backend (Flask, fichiers, pas de DB)
+---
 
-```
-backend/
-├── app/
-│   ├── api/            # blueprints Flask : graph.py, simulation.py, report.py, scenario.py
-│   ├── services/        # logique métier (voir §4)
-│   ├── models/          # Project, Task -- dataclasses sérialisées en JSON, PAS de DB
-│   └── config.py
-├── uploads/              # LE stockage réel de l'application
-│   ├── projects/<project_id>/          # texte de loi, ontologie, project.json
-│   ├── simulations/<simulation_id>/    # profils d'agents, config, logs OASIS, run_state.json
-│   ├── reports/<report_id>.json        # sortie du ReportAgent (recap)
-│   └── scenarios/<scenario_id>.json    # sortie du ScenarioAgent (nouveau)
-└── .venv311/             # environnement Python 3.11 dédié au sous-processus OASIS
-                           # (camel-oasis incompatible Python 3.12) -- transparent pour le frontend,
-                           # mentionné ici seulement pour comprendre pourquoi la simulation tourne
-                           # dans un sous-processus séparé avec ses propres logs.
-```
-
-**Aucune base de données.** Chaque identifiant (`project_id`, `simulation_id`, `report_id`,
-`scenario_id`) correspond à un dossier ou fichier JSON sur disque. Une conséquence directe pour le
-frontend : **il n'y a pas de liste globale de "tous les scénarios d'un utilisateur"** (pas de
-compte, pas de DB à interroger) — la navigation se fait uniquement via les identifiants passés de
-route en route (`project_id` → `simulation_id` → `report_id`/`scenario_id`).
-
-**Toute opération longue (ontologie, graphe, simulation, rapport, scénario) est asynchrone** : un
-`POST .../generate` (ou `.../build`, `.../prepare`, `.../start`) répond immédiatement avec un
-`task_id`, pendant qu'un thread tourne en fond côté serveur. Le frontend doit **poller** un endpoint
-de statut toutes les ~2 secondes jusqu'à `status: "completed"` ou `"failed"`. C'est le même pattern
-partout (ontologie, graphe, préparation, simulation, rapport, scénario) — un seul mécanisme de
-polling générique côté frontend suffit pour toutes ces étapes.
-
-## 3. Le circuit cible — routes, déclencheurs de navigation, paramètres
-
-Focus uniquement sur la **logique de navigation** (quelle route, quel `router.push`, quels
-paramètres/props passent d'une page à l'autre) — pas de design, pas d'UI. Circuit A (§0bis),
-inspiré du parcours MiroFish d'origine.
-
-### Table des routes cibles
-
-| # | Route | Nom | Composant(s) | Param requis pour entrer |
-|---|---|---|---|---|
-| 0 | `/` | `Home` | `Home.vue` | aucun |
-| 1-2 | `/process/:projectId` | `Process` | `MainView.vue` → `Step1GraphBuild.vue` puis `Step2EnvSetup.vue` (état interne, pas de sous-route) | `projectId` |
-| 3 | `/simulation/:simulationId` | `Simulation` | `SimulationView.vue` → `Step3Simulation.vue` (écran de préparation/lancement) | `simulationId` |
-| 3bis | `/simulation/:simulationId/start` | `SimulationRun` | `SimulationRunView.vue` (suivi temps réel du débat) | `simulationId`, query `maxRounds?` |
-| 4 | `/results/:simulationId` **(à créer, remplace `/report/:reportId`)** | `Results` | `ReportView.vue` (à renommer/adapter) | `simulationId` — **pas** `reportId`/`scenarioId`, voir plus bas pourquoi |
-| 5 | `/interaction/:simulationId` **(param à corriger, voir plus bas)** | `Interaction` | `InteractionView.vue` | `simulationId` |
-
-### Déclencheurs de navigation, étape par étape
-
-**Étape 0 → 1.** Sur `Home.vue`, l'utilisateur dépose un fichier + décrit son besoin
-(`simulation_requirement`), stockés dans `store/pendingUpload.js`. Le clic sur le bouton principal
-déclenche `POST /api/graph/ontology/generate`, puis `router.push({ name: 'Process', params: {
-projectId: res.data.project_id } })` — **`MainView.vue` fait déjà exactement ça à la ligne 218**
-(`router.replace({ name: 'Process', params: { projectId: res.data.project_id } })`), il faut juste
-que ce soit CE flux que les boutons de `Home.vue` déclenchent, pas `$router.push('/scenarios')`.
-
-**Étape 1 → 2.** Interne à `MainView.vue`/`Process.vue` : pas de changement de route, juste un
-changement d'étape affichée (`Step1GraphBuild.vue` puis `Step2EnvSetup.vue`) une fois
-`POST /api/graph/build` terminé.
-
-**Étape 2 → 3.** Une fois les agents générés (`POST /api/simulation/prepare` terminé,
-`simulation_id` connu), navigation vers `Simulation` avec `simulationId` en param — c'est le rôle de
-`SimulationView.vue` de gérer le lancement effectif ensuite.
-
-**Étape 3 → 3bis.** Déjà implémenté correctement dans `SimulationView.vue` (`handleNextStep`,
-ligne ~152) : `router.push({ name: 'SimulationRun', params: { simulationId:
-currentSimulationId.value }, query: { maxRounds } })`.
-
-**Étape 3bis → 4 — TRANSITION MANQUANTE, à ajouter.** `SimulationRunView.vue` n'a **aucune**
-navigation sortante vers une page de résultat (vérifié : un seul `router.push` dans tout le fichier,
-qui revient en arrière vers `Simulation`). Il faut ajouter : une fois
-`GET /api/simulation/<id>/run-status` indique la simulation terminée, afficher un bouton "Voir les
-résultats" qui fait `router.push({ name: 'Results', params: { simulationId:
-currentSimulationId.value } })`.
-
-**Pourquoi la route de résultat doit être keyée par `simulationId` et pas `reportId`.** La route
-actuelle `/report/:reportId` (`ReportView.vue`) suppose qu'on a déjà un `report_id` en arrivant —
-mais à la sortie de l'étape 3bis, on n'a que le `simulation_id` ; le `report_id` (et le
-`scenario_id`) ne sont créés qu'au moment où `POST /api/report/generate` /
-`POST /api/scenario/generate` sont appelés. Il faut donc que la page de résultat parte de
-`simulation_id`, appelle `GET /api/report/by-simulation/:simulationId` et
-`GET /api/scenario/by-simulation/:simulationId` pour savoir si un recap/scénario existe déjà
-(sinon proposer de les générer), plutôt que d'exiger un id qu'on n'a pas encore. C'est la même
-page qui gère les deux générations en parallèle (recap = `ReportAgent`, scénario tendanciel =
-`ScenarioAgent`), pas deux routes séparées — les deux se lancent et se pollent indépendamment,
-mais restent affichés sur un seul écran puisqu'ils partagent le même `simulation_id` de contexte.
-
-**Étape 4 → 5.** Une fois au moins le recap disponible (`interview_unlocked` déjà renvoyé par
-`GET /api/report/check/<simulation_id>` dans le backend existant), navigation vers `Interaction`
-avec `simulationId` en param — **pas `reportId`** comme le fait la route actuelle
-(`/interaction/:reportId`), pour la même raison qu'au point précédent : `Step5Interaction.vue` a
-besoin de `simulation_id` pour interroger les agents (`POST /api/simulation/interview` prend
-`simulation_id`, pas un `report_id`).
-
-**Navigation retour.** Chaque vue a déjà un lien "MIROFISH" en haut qui ramène à `/` — cohérent,
-à garder. `SimulationView.vue`/`SimulationRunView.vue` ont déjà un retour vers l'étape précédente
-avec les bons params — pattern à répliquer sur les nouvelles transitions.
-
-### Résumé des corrections de navigation à appliquer
-
-1. `Home.vue` : les CTA doivent lancer le flux d'upload (Étape 0→1), pas pointer vers
-   `/scenarios`/`/comparison`.
-2. `SimulationRunView.vue` : ajouter la navigation sortante vers `Results` en fin de simulation
-   (actuellement absente).
-3. Renommer/recadrer la route résultat pour qu'elle prenne `simulationId`, pas `reportId`.
-4. `InteractionView.vue`/route `/interaction/:id` : même correction, `simulationId` pas `reportId`.
-5. Retirer les routes/vues du Circuit B de `router/index.js` une fois le Circuit A vérifié
-   fonctionnel (`/scenarios`, `/scenario-detail/:scenarioId`, `/comparison`, `/backtesting`,
-   `/admin`, `/login`, `/process/new`) — ou au minimum ne plus les lier depuis `Home.vue`.
-
-## 4. Règles du backend à connaître (même si tu ne touches pas le code Python)
-
-- **Pas de compte, pas d'auth, pas de rôle.** Retirer l'injection du header `Authorization` dans
-  `src/api/index.js` n'est pas urgent (elle est juste ignorée côté serveur) mais ne pas construire
-  de flux de connexion.
-- **Les deux agents (Report/Scenario) peuvent échouer indépendamment** (LLM manquant, graphe vide,
-  etc.) — toujours gérer leur état séparément côté UI (l'un peut être `completed` pendant que l'autre
-  est `failed` ou pas encore lancé).
-- **Vocabulaire imposé** (CLAUDE.md §2) : "estimation exploratoire" jamais "prédiction" ; jamais
-  d'élu nommé individuellement, seulement des groupes parlementaires.
-- **Disclaimer visible** sur le recap ET sur le scénario tendanciel : *"estimation qualitative
-  générée par IA, ne reflète pas la position officielle des groupes parlementaires ni une prédiction
-  fiable de vote réel."*
-- **Zéro Emoji dans l'interface (UI) :** STRICTEMENT INTERDIT d'utiliser des emojis (⚡, 📑, 📄, 🚀, etc.) dans les boutons, titres, menus ou textes. L'interface doit maintenir un design architectural, sobre, scientifique et purement textuel/graphique.
-
-## 5. Composants existants — statut
-
-| Composant | Statut |
-|---|---|
-| `Step1GraphBuild.vue`, `Step2EnvSetup.vue`, `Step3Simulation.vue`, `Step5Interaction.vue` | Bons, alignés avec le backend actuel |
-| `Step4Report.vue` | Bon pour le recap (4a) — à dupliquer/étendre pour afficher aussi le scénario tendanciel (4b) à côté |
-| `GraphPanel.vue`, `HistoryDatabase.vue`, `LanguageSwitcher.vue`, `MiroNavbar.vue` | Inchangés |
-| `ProspectiveTimeline.vue` | À réécrire simple (3 sections de texte, pas de rounds) ou remplacer par un rendu façon `Step4Report.vue` |
-| `AdminUserManagement.vue`, `BacktestingDashboard.vue`, `ComparisonDashboard.vue`, `FranceMap.vue`, `PublishReviewPanel.vue`, `ScenarioLibrary.vue` | Orphelins (§0), ne pas continuer à les développer |
-
-## 6. Contrat d'API (IDENTIQUE à CLAUDE.md §6)
+## 3. Contrat d'API (identique à CLAUDE.md §7)
 
 ### Hérité, inchangé
 `/api/graph/ontology/generate`, `/api/graph/build`, `/api/graph/task/<id>`,
 `/api/simulation/create`, `/prepare`, `/prepare/status`, `/start`, `/<id>/run-status`,
 `/<id>/actions`, `/<id>/profiles`, `/interview` ; `/api/report/generate`, `/generate/status`
-(**POST**, pas GET), `/<report_id>`.
+(POST), `/<report_id>`.
 
-### Nouveau : agent de scénario tendanciel
+### Agent de scénario tendanciel
 - `POST /api/scenario/generate` — `{simulation_id, force_regenerate?}` → `{scenario_id, task_id, status}`.
-- `POST /api/scenario/generate/status` — `{task_id}` ou `{simulation_id}` → statut de tâche (même
-  forme que `/api/report/generate/status`).
-- `GET /api/scenario/<scenario_id>` → `{scenario_id, simulation_id, status, title, sections: [{title, content}], error, created_at, completed_at}`.
-- `GET /api/scenario/by-simulation/<simulation_id>` → dernier scénario généré pour cette simulation
-  (utile pour éviter de regénérer si déjà fait, même logique que `ReportManager.get_report_by_simulation`).
+- `POST /api/scenario/generate/status` — `{task_id}` ou `{simulation_id}` → statut de tâche.
+- `GET /api/scenario/<scenario_id>` →
+  ```json
+  {
+    "scenario_id": "...", "simulation_id": "...", "status": "completed", "title": "...",
+    "sections": [{"title": "...", "content": "..."}],
+    "vote_outcome": {
+      "total_seats": 577, "support_seats": 300, "oppose_seats": 200,
+      "abstain_seats": 30, "undecided_seats": 47,
+      "outcome": "adopted", "majority_threshold": 251,
+      "by_group": [{"group_name": "EPR", "seats": 91, "position": "support"}]
+    },
+    "error": null, "created_at": "...", "completed_at": "..."
+  }
+  ```
+  `vote_outcome` peut être `null` — toujours vérifier sa présence avant d'afficher le bloc vote
+  (`Step4Scenario.vue` le fait déjà correctement, à reproduire si le composant est modifié).
+- `GET /api/scenario/by-simulation/<simulation_id>` → dernier scénario généré pour cette simulation.
 
-Pas de champ exotique (pas de score OpenFisca, pas de carte, pas de rounds/variance) — `sections`
-est une liste de texte à afficher comme le rapport de recap.
-
-## 7. i18n
+## 4. i18n
 
 Structure existante conservée (`locales/*.json`), français prioritaire.
 
-## 8. Coordination avec le backend (Claude)
+## 5. Coordination avec le backend (Claude)
 
-Le contrat d'API de CLAUDE.md §6 fait autorité au même titre que ce document. Avant de développer un
-écran, vérifier dans ce fichier (§0 et §5) s'il correspond à une fonctionnalité encore active côté
-backend — plusieurs itérations ont ajouté puis retiré des pans entiers de la plateforme, mieux vaut
-vérifier que supposer.
+CLAUDE.md fait autorité au même titre que ce document sur les règles de la section 1. Avant de
+construire un nouvel écran, vérifier qu'il correspond à une ligne du tableau §1.3 (ce qu'on a) — si
+ce n'est pas le cas, c'est probablement une fonctionnalité du §1.4 (ce qu'on n'a pas), à ne pas
+recoder sans demande explicite.
