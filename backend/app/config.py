@@ -104,6 +104,13 @@ class Config:
     )
     DATAGOUV_MCP_URL = os.environ.get('DATAGOUV_MCP_URL', 'https://mcp.data.gouv.fr/mcp')
     DATAGOUV_API_URL = os.environ.get('DATAGOUV_API_URL', 'https://www.data.gouv.fr/api/1')
+    # Composition des groupes parlementaires : source vérifiée fonctionnelle (2026-07) --
+    # dataset officiel "Groupes politiques actifs de l'Assemblée nationale" sur data.gouv.fr,
+    # ressource CSV mise à jour automatiquement (colonne dateMaj). Remplace l'endpoint GraphQL
+    # Tricoteuses dont l'URL publique exacte n'a pas pu être confirmée -- voir tricoteuses_client.py.
+    DATAGOUV_GROUPES_DATASET_ID = os.environ.get(
+        'DATAGOUV_GROUPES_DATASET_ID', '60ed57a9f0c7c3a1eb29733f'
+    )
     DATACIRCO_URL = os.environ.get('DATACIRCO_URL', 'https://datacirco.leximpact.an.fr')
     # Dossier de cache local pour les données régulatoires/spatialisées (couche 1) -- jamais
     # d'appel réseau live à ces sources pendant une démo/présentation, cf. CLAUDE.md §2.

@@ -5,6 +5,28 @@ backend, et contrat d'API partagé avec le frontend (piloté par Gemini via GEMI
 Toute divergence entre ce fichier et GEMINI.md sur le contrat d'API doit être corrigée immédiatement
 dans les deux fichiers.
 
+## 0. Addendum post-implémentation (vérifié, 2026-07) — lire avant de coder
+
+Le backend a été implémenté et testé bout-en-bout. Corrections par rapport au design initial :
+
+- **`camel-oasis` et `openfisca-france` ne s'installent/importent pas sous Python 3.12.** Solution
+  retenue : un venv Python 3.11 dédié (`backend/.venv311`), auto-détecté par
+  `Config.OASIS_PYTHON_EXECUTABLE` pour le sous-processus OASIS. Le script
+  `backend/scripts/precompute_openfisca.py` doit être exécuté avec cet interpréteur, jamais avec
+  le venv principal.
+- **L'endpoint GraphQL Tricoteuses n'a jamais pu être confirmé publiquement.** `tricoteuses_client.
+  fetch_parliamentary_groups` utilise désormais le dataset officiel "Groupes politiques actifs de
+  l'Assemblée nationale" sur data.gouv.fr (`Config.DATAGOUV_GROUPES_DATASET_ID`) — vérifié en
+  conditions réelles (577 sièges, effectifs exacts par groupe). `fetch_historical_votes` (backtesting)
+  reste sur Tricoteuses, toujours non vérifié, dégrade proprement.
+- **Nouveau module `map_data_builder.py`** (+ `POST /api/simulation/<id>/map-data/build`) génère
+  effectivement `map_data.json` — ce pipeline n'existait pas dans le design initial où l'endpoint
+  `GET .../map-data` ne faisait que lire un fichier supposé déjà présent. **Seule la granularité
+  région est implémentée** ; rien ne déclenche automatiquement la génération après une simulation
+  (TODO : câbler ça à la fin de `SimulationRunner`).
+- **Clés canoniques du contrat carte : `code` et `name` uniquement** (pas `region_code`/`region_name`,
+  qui ont existé brièvement pendant le développement et ont été supprimées).
+
 ## 1. Vision
 
 MiroPolis est un jumeau numérique exploratoire de l'Assemblée Nationale et de la société française,

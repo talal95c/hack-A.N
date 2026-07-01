@@ -32,4 +32,6 @@ def make_celery() -> Celery:
 celery_app = make_celery()
 
 # Enregistre les modules de tâches (chaque import déclenche les décorateurs @celery_app.task)
-from .tasks import graph_tasks, simulation_tasks, backtesting_tasks, temporal_tasks, comparison_tasks  # noqa: E402,F401
+from .tasks import (  # noqa: E402,F401
+    graph_tasks, simulation_tasks, backtesting_tasks, temporal_tasks, comparison_tasks, map_data_tasks,
+)

@@ -2768,3 +2768,40 @@ def get_map_data(simulation_id: str):
     except (OSError, ValueError) as exc:
         logger.error(f"Lecture map_data.json échouée pour {simulation_id}: {exc}")
         return jsonify({"granularity": granularity, "areas": [], "disclaimer": disclaimer, "error": str(exc)})
+
+
+@simulation_bp.route('/<simulation_id>/map-data/build', methods=['POST'])
+def build_map_data_route(simulation_id: str):
+    """
+    Déclenche la construction de map_data.json (CLAUDE.md §6) à partir des marges démographiques
+    régionales fournies et des scores qualitatifs déjà calculés par le débat MiroPolis.
+
+    Corps attendu :
+    {
+      "region_marginals": [{"region_code": str, "dimensions": [{"name","categories","marginal"}]}],
+      "agents_per_region": int,
+      "archetype_scores": {archetype_id: score},
+      "openfisca_results_path": str?  # défaut: cache territorial standard si présent
+    }
+    """
+    from ..tasks.map_data_tasks import build_map_data_task
+
+    data = request.get_json(force=True, silent=True) or {}
+    region_marginals = data.get('region_marginals', [])
+    if not region_marginals:
+        return jsonify({"error": "region_marginals requis (au moins une région)"}), 400
+
+    default_openfisca_path = os.path.join(Config.TERRITORIAL_CACHE_DIR, 'openfisca_results.json')
+    openfisca_path = data.get('openfisca_results_path') or (
+        default_openfisca_path if os.path.exists(default_openfisca_path) else None
+    )
+
+    result = build_map_data_task.delay(
+        simulation_id=simulation_id,
+        region_marginals=region_marginals,
+        agents_per_region=data.get('agents_per_region', 30),
+        archetype_scores=data.get('archetype_scores', {}),
+        openfisca_results_path=openfisca_path,
+    ).get()
+
+    return jsonify(result), 201

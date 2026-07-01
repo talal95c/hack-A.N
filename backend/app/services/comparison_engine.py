@@ -59,9 +59,10 @@ def compare_scenarios(snapshots: list[ScenarioMapSnapshot]) -> ComparisonResult:
     if len(snapshots) < 2:
         raise ValueError("La comparaison nécessite au moins 2 scénarios")
 
-    # Index des zones par code, pour chaque snapshot
+    # Index des zones par code -- "code" est la clé canonique du contrat d'API (CLAUDE.md §6),
+    # cf. map_data_builder.py.
     areas_by_scenario: dict[str, dict[str, dict]] = {
-        snap.scenario_id: {a["code"] if "code" in a else a.get("region_code", a.get("area_code")): a for a in snap.areas}
+        snap.scenario_id: {a["code"]: a for a in snap.areas}
         for snap in snapshots
     }
 
@@ -79,7 +80,7 @@ def compare_scenarios(snapshots: list[ScenarioMapSnapshot]) -> ComparisonResult:
             area = areas_by_scenario[snap.scenario_id].get(code)
             if area is None:
                 continue
-            area_name = area.get("name") or area.get("region_name") or area_name
+            area_name = area.get("name") or area_name
             qualitative_by_scenario[snap.scenario_id] = area.get("qualitative_score")
             openfisca = area.get("openfisca_indicator") or {}
             if openfisca.get("available"):
