@@ -1,1 +1,0 @@
-export { compareScenarios } from './temporal'

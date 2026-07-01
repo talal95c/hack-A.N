@@ -4,13 +4,9 @@ carbone, emploi territorial, et tout autre jeu de données public pertinent.
 
 Statut vérifié à l'implémentation : `https://www.data.gouv.fr/api/1/` répond HTTP 200 et est une
 API REST/CKAN classique, bien documentée et directement utilisable avec `requests` (vérifié en
-conditions réelles). Le serveur MCP officiel (`mcp.data.gouv.fr/mcp`, confirmé exister via recherche
-web) est conçu pour un accès conversationnel par agent LLM via le protocole MCP (JSON-RPC), ce qui
-demande un client MCP dédié plus lourd à opérer côté serveur qu'un simple appel REST. Choix retenu
-ici, conforme à CLAUDE.md §7 ("interface commune... pour rester interchangeable") : utiliser l'API
-REST directement pour ce client — plus simple, déjà vérifiée fonctionnelle, mêmes données. Le
-paramètre `Config.DATAGOUV_MCP_URL` reste configuré et documenté pour une bascule future vers un
-vrai client MCP si un agent doit un jour dialoguer nativement avec data.gouv.fr en langage naturel.
+conditions réelles, c'est cette API qui est utilisée ici, pas le serveur MCP officiel de
+data.gouv.fr qui demanderait un client MCP dédié plus lourd à opérer côté serveur qu'un simple
+appel REST pour le même résultat).
 """
 
 import logging

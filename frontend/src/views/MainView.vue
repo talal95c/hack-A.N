@@ -184,7 +184,7 @@ const handleGoBack = () => {
 
 const initProject = async () => {
   addLog('Project view initialized.')
-  if (currentProjectId.value === 'new') {
+  if (currentProjectId.value === 'new' || currentProjectId.value === 'start') {
     await handleNewProject()
   } else {
     await loadProject()

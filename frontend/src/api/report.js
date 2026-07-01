@@ -10,10 +10,11 @@ export const generateReport = (data) => {
 
 /**
  * 获取报告生成状态
- * @param {string} reportId
+ * @param {Object|string} data - { task_id, simulation_id } ou taskId
  */
-export const getReportStatus = (reportId) => {
-  return service.get(`/api/report/generate/status`, { params: { report_id: reportId } })
+export const getReportStatus = (data) => {
+  const payload = typeof data === 'string' ? { task_id: data } : data
+  return service.post(`/api/report/generate/status`, payload)
 }
 
 /**

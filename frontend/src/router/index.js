@@ -5,13 +5,15 @@ import SimulationView from '../views/SimulationView.vue'
 import SimulationRunView from '../views/SimulationRunView.vue'
 import ReportView from '../views/ReportView.vue'
 import InteractionView from '../views/InteractionView.vue'
-import ScenariosView from '../views/ScenariosView.vue'
-import ScenarioDetailView from '../views/ScenarioDetailView.vue'
-import ComparisonView from '../views/ComparisonView.vue'
-import BacktestingView from '../views/BacktestingView.vue'
-import AdminView from '../views/AdminView.vue'
-import LoginView from '../views/LoginView.vue'
+import NewScenarioWizardView from '../views/NewScenarioWizardView.vue'
 
+// Circuit unique (MiroFish v2, cf. GEMINI.md §3) :
+// Home -> /process/new (upload) -> Process (ontologie+graphe+agents) -> Simulation (préparation)
+// -> SimulationRun (débat OASIS) -> Report (recap + scénario tendanciel) -> Interaction (interview)
+//
+// Les routes de l'ancien "Circuit B" (bibliothèque de scénarios en DB, comparaison de lois,
+// backtesting, admin, login) ont été retirées : leurs endpoints backend n'existent plus
+// (voir CLAUDE.md/GEMINI.md pour l'historique du recadrage du backend).
 const routes = [
   {
     path: '/',
@@ -19,35 +21,9 @@ const routes = [
     component: Home
   },
   {
-    path: '/scenarios',
-    name: 'Scenarios',
-    component: ScenariosView
-  },
-  {
-    path: '/scenario-detail/:scenarioId',
-    name: 'ScenarioDetail',
-    component: ScenarioDetailView,
-    props: true
-  },
-  {
-    path: '/comparison',
-    name: 'Comparison',
-    component: ComparisonView
-  },
-  {
-    path: '/backtesting',
-    name: 'Backtesting',
-    component: BacktestingView
-  },
-  {
-    path: '/admin',
-    name: 'Admin',
-    component: AdminView
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: LoginView
+    path: '/process/new',
+    name: 'NewScenarioWizard',
+    component: NewScenarioWizardView
   },
   {
     path: '/process/:projectId',

@@ -79,30 +79,10 @@ class Config:
     REPORT_AGENT_MAX_REFLECTION_ROUNDS = int(os.environ.get('REPORT_AGENT_MAX_REFLECTION_ROUNDS', '2'))
     REPORT_AGENT_TEMPERATURE = float(os.environ.get('REPORT_AGENT_TEMPERATURE', '0.5'))
 
-    # ============= MiroPolis : infrastructure de production (CLAUDE.md couche 5) =============
-    # Base de données réelle (PostgreSQL en prod). En dev/local, si DATABASE_URL n'est pas défini,
-    # on retombe sur SQLite (fichier local) pour que tout le code reste vérifiable sans dépendance
-    # externe -- pas une limite fonctionnelle, juste un choix pragmatique pour l'environnement local.
-    DATABASE_URL = os.environ.get(
-        'DATABASE_URL',
-        'sqlite:///' + os.path.join(os.path.dirname(__file__), '../uploads/miropolis_dev.db')
-    )
-
-    # File de jobs (Celery + Redis). Si REDIS_URL n'est pas défini, Celery tourne en mode "eager"
-    # (les tâches s'exécutent en synchrone dans le process appelant) -- permet de vérifier la logique
-    # des tâches sans nécessiter un vrai broker Redis en local.
-    REDIS_URL = os.environ.get('REDIS_URL')  # None -> mode eager
-    CELERY_TASK_ALWAYS_EAGER = REDIS_URL is None
-
-    # Auth (couche 5)
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'miropolis-dev-jwt-secret-change-in-prod')
-    JWT_ACCESS_TOKEN_EXPIRES_SECONDS = int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES_SECONDS', '3600'))
-
-    # ============= MiroPolis : couche 1, données réglementaires spatialisées =============
+    # ============= MiroPolis : sources de données réelles (CLAUDE.md §5) =============
     TRICOTEUSES_GRAPHQL_URL = os.environ.get(
         'TRICOTEUSES_GRAPHQL_URL', 'https://assemblee.tricoteuses.fr/graphql'
     )
-    DATAGOUV_MCP_URL = os.environ.get('DATAGOUV_MCP_URL', 'https://mcp.data.gouv.fr/mcp')
     DATAGOUV_API_URL = os.environ.get('DATAGOUV_API_URL', 'https://www.data.gouv.fr/api/1')
     # Composition des groupes parlementaires : source vérifiée fonctionnelle (2026-07) --
     # dataset officiel "Groupes politiques actifs de l'Assemblée nationale" sur data.gouv.fr,
@@ -111,11 +91,15 @@ class Config:
     DATAGOUV_GROUPES_DATASET_ID = os.environ.get(
         'DATAGOUV_GROUPES_DATASET_ID', '60ed57a9f0c7c3a1eb29733f'
     )
-    DATACIRCO_URL = os.environ.get('DATACIRCO_URL', 'https://datacirco.leximpact.an.fr')
-    # Dossier de cache local pour les données régulatoires/spatialisées (couche 1) -- jamais
-    # d'appel réseau live à ces sources pendant une démo/présentation, cf. CLAUDE.md §2.
+    # Dossier de cache local pour les données réglementaires (CLAUDE.md §2 : jamais d'appel réseau
+    # live à ces sources pendant une démo/présentation).
     TERRITORIAL_CACHE_DIR = os.path.join(os.path.dirname(__file__), '../uploads/territorial_cache')
     HTTP_CLIENT_TIMEOUT_SECONDS = int(os.environ.get('HTTP_CLIENT_TIMEOUT_SECONDS', '10'))
+
+    # ============= Scenario Agent配置（trajectoire tendancielle） =============
+    SCENARIO_AGENT_MAX_TOOL_CALLS = int(os.environ.get('SCENARIO_AGENT_MAX_TOOL_CALLS', '5'))
+    SCENARIO_AGENT_MAX_REFLECTION_ROUNDS = int(os.environ.get('SCENARIO_AGENT_MAX_REFLECTION_ROUNDS', '2'))
+    SCENARIO_AGENT_TEMPERATURE = float(os.environ.get('SCENARIO_AGENT_TEMPERATURE', '0.6'))
 
     @classmethod
     def validate(cls) -> list[str]:

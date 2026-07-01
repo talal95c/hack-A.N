@@ -206,7 +206,7 @@
           
           <!-- 错误状态 -->
           <div v-else-if="error" class="graph-error">
-            <span class="error-icon">⚠</span>
+            <span class="error-icon">!</span>
             <p>{{ error }}</p>
           </div>
         </div>

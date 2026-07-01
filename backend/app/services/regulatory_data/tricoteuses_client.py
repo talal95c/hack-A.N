@@ -13,16 +13,13 @@ le point d'entrée réel du projet `tricoteuses-api-assemblee` n'a pas pu être 
 contient exactement ce dont MiroPolis a besoin pour la couche 2 (composition réelle par groupe,
 avec effectif réel utilisable directement par `vote_aggregation.py`).
 
-Le point d'entrée GraphQL Tricoteuses (`Config.TRICOTEUSES_GRAPHQL_URL`) est conservé pour
-`fetch_historical_votes` (backtesting) car aucune alternative data.gouv.fr équivalente n'a été
-trouvée pour l'historique de scrutins par groupe -- cette fonction reste donc non vérifiée et
-dégrade proprement (`available=False`) tant que l'URL réelle n'est pas confirmée.
+Le module ne contient plus que cette fonction : `fetch_historical_votes` (utilisée pour le
+backtesting) a été retirée avec le reste des fonctionnalités hors scope de MiroFish v2.
 """
 
 import csv
 import io
 import logging
-from typing import Optional
 
 import requests
 
@@ -85,61 +82,3 @@ def fetch_parliamentary_groups(force_refresh: bool = False) -> StructuredResult:
         return StructuredResult(source="data.gouv.fr/an-groupes", available=False, error=str(exc))
 
 
-# ---------------------------------------------------------------------------
-# Historique de votes (backtesting) -- reste sur le point d'entrée Tricoteuses, NON vérifié.
-# ---------------------------------------------------------------------------
-
-GROUPS_QUERY = """
-query ParliamentaryGroups {
-  organes(type: "GP") { uid libelle libelleAbrege nombreMembres }
-}
-"""
-
-
-def _graphql_request(query: str, variables: Optional[dict] = None) -> dict:
-    response = requests.post(
-        Config.TRICOTEUSES_GRAPHQL_URL,
-        json={"query": query, "variables": variables or {}},
-        headers={"Content-Type": "application/json", "Accept": "application/json"},
-        timeout=Config.HTTP_CLIENT_TIMEOUT_SECONDS,
-    )
-    response.raise_for_status()
-    content_type = response.headers.get("content-type", "")
-    if "application/json" not in content_type:
-        raise ValueError(
-            f"Réponse non-JSON reçue de {Config.TRICOTEUSES_GRAPHQL_URL} "
-            f"(content-type={content_type}) — endpoint GraphQL Tricoteuses non confirmé, cf. "
-            f"docstring du module. Vérifier TRICOTEUSES_GRAPHQL_URL."
-        )
-    payload = response.json()
-    if "errors" in payload:
-        raise ValueError(f"Erreurs GraphQL Tricoteuses: {payload['errors']}")
-    return payload["data"]
-
-
-def fetch_historical_votes(law_reference: str) -> StructuredResult:
-    """Votes réels historiques pour un texte donné, par groupe parlementaire — utilisé uniquement
-    par le module de backtesting (CLAUDE.md §2 : jamais affiché comme prédiction, usage interne de
-    calibration uniquement). ⚠️ Endpoint non vérifié, voir docstring du module -- dégrade proprement
-    vers `available=False` tant que l'URL réelle n'est pas confirmée."""
-    cache_filename = f"tricoteuses_votes_{law_reference}.json"
-    cached = read_cache(cache_filename)
-    if cached is not None:
-        return StructuredResult(source="tricoteuses", available=True, data=cached, from_cache=True)
-
-    query = """
-    query HistoricalVotes($ref: String!) {
-      scrutin(reference: $ref) {
-        reference
-        titre
-        decompteParGroupe { groupe { libelleAbrege } position }
-      }
-    }
-    """
-    try:
-        data = _graphql_request(query, {"ref": law_reference})
-        write_cache(cache_filename, data)
-        return StructuredResult(source="tricoteuses", available=True, data=data, from_cache=False)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Tricoteuses fetch_historical_votes(%s) failed: %s", law_reference, exc)
-        return StructuredResult(source="tricoteuses", available=False, error=str(exc))

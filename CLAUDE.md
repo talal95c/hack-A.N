@@ -1,216 +1,178 @@
-# CLAUDE.md — MiroPolis (plateforme complète, fork MiroFish)
+# CLAUDE.md — MiroPolis ("MiroFish v2")
 
-Ce fichier oriente Claude sur l'ensemble du projet : vision, architecture, principes non négociables,
-backend, et contrat d'API partagé avec le frontend (piloté par Gemini via GEMINI.md).
-Toute divergence entre ce fichier et GEMINI.md sur le contrat d'API doit être corrigée immédiatement
-dans les deux fichiers.
+Ce fichier oriente Claude sur le backend. Le frontend est piloté par Gemini via GEMINI.md — le
+contrat d'API en section 7 de ce document est IDENTIQUE au contrat GEMINI.md. Ne jamais diverger
+sans mettre à jour les deux fichiers.
 
-## 0. Addendum post-implémentation (vérifié, 2026-07) — lire avant de coder
+## 1. Vision — ce que le produit doit permettre, précisément
 
-Le backend a été implémenté et testé bout-en-bout. Corrections par rapport au design initial :
+> Les Députés IA : configurés selon la composition réelle de l'hémicycle et le programme de leur
+> parti. Ils débattent, proposent des amendements et votent sur le texte soumis.
+> Les Citoyens IA : un échantillon représentatif de la population (âge, profession, géographie).
+> Ils réagissent aux débats et évaluent l'impact concret de la loi sur leur quotidien (pouvoir
+> d'achat, environnement, services publics).
+> Grâce à ce jumeau numérique, le législateur peut tester des formulations d'amendements pour
+> maximiser le consensus ou identifier les angles morts d'une réforme.
 
-- **`camel-oasis` et `openfisca-france` ne s'installent/importent pas sous Python 3.12.** Solution
-  retenue : un venv Python 3.11 dédié (`backend/.venv311`), auto-détecté par
-  `Config.OASIS_PYTHON_EXECUTABLE` pour le sous-processus OASIS. Le script
-  `backend/scripts/precompute_openfisca.py` doit être exécuté avec cet interpréteur, jamais avec
-  le venv principal.
-- **L'endpoint GraphQL Tricoteuses n'a jamais pu être confirmé publiquement.** `tricoteuses_client.
-  fetch_parliamentary_groups` utilise désormais le dataset officiel "Groupes politiques actifs de
-  l'Assemblée nationale" sur data.gouv.fr (`Config.DATAGOUV_GROUPES_DATASET_ID`) — vérifié en
-  conditions réelles (577 sièges, effectifs exacts par groupe). `fetch_historical_votes` (backtesting)
-  reste sur Tricoteuses, toujours non vérifié, dégrade proprement.
-- **Nouveau module `map_data_builder.py`** (+ `POST /api/simulation/<id>/map-data/build`) génère
-  effectivement `map_data.json` — ce pipeline n'existait pas dans le design initial où l'endpoint
-  `GET .../map-data` ne faisait que lire un fichier supposé déjà présent. **Seule la granularité
-  région est implémentée** ; rien ne déclenche automatiquement la génération après une simulation
-  (TODO : câbler ça à la fin de `SimulationRunner`).
-- **Clés canoniques du contrat carte : `code` et `name` uniquement** (pas `region_code`/`region_name`,
-  qui ont existé brièvement pendant le développement et ont été supprimées).
+C'est la définition de référence du produit — chaque décision technique de ce document doit s'y
+rattacher explicitement. Trois conséquences directes :
 
-## 1. Vision
+1. **Les Députés IA ne sont pas de simples "personas génériques par groupe"** : ils doivent être
+   ancrés sur (a) la composition réelle de l'hémicycle (nombre de sièges par groupe, vérifié
+   fonctionnel via data.gouv.fr — voir §5) ET (b) une ligne politique/programme représentative du
+   groupe, et ils doivent produire un **résultat de vote explicite** sur le texte, pas seulement une
+   réaction qualitative vague. Voir §6.2.
+2. **Les Citoyens IA réagissent selon 3 axes d'impact concret nommés** : pouvoir d'achat,
+   environnement, services publics — pas une réaction générique "content/pas content". Les prompts
+   de génération de persona et les sections de rapport doivent citer ces axes explicitement.
+3. **L'objectif final est outillé pour l'itération** : le législateur doit pouvoir tester une
+   formulation d'amendement et voir l'effet sur le consensus. Dans l'état actuel du produit
+   (MiroFish v2, un run = un texte de loi), cet objectif est atteint de deux façons : (a) relancer
+   le pipeline avec un texte modifié (un nouvel upload = une nouvelle simulation, aucune
+   fonctionnalité dédiée nécessaire) et (b) l'agent de scénario tendanciel calcule maintenant un
+   **vote simulé pondéré par sièges réels** (§6.2) qui donne une mesure concrète et comparable du
+   consensus d'une formulation à l'autre. La comparaison structurée de plusieurs formulations en une
+   seule vue (A/B) a été explicitement retirée du scope (§2) — à ne réintroduire que sur demande
+   explicite.
 
-MiroPolis est un jumeau numérique exploratoire de l'Assemblée Nationale et de la société française,
-fork de MiroFish, conçu comme une **plateforme utilisée en continu** (pas une démo ponctuelle) par
-des députés et leurs collaborateurs pour tester l'impact d'un texte de loi avant son examen :
-construire un scénario, le comparer à des variantes, l'interroger en direct, en tirer une trajectoire
-prospective, publier un rapport dont la rigueur méthodologique est vérifiable (backtesting), pas
-seulement déclarée.
+MiroPolis garde par ailleurs l'architecture MiroFish telle quelle, de bout en bout (upload →
+ontologie → graphe Zep → simulation OASIS → rapport → interaction profonde).
 
-Trois axes fusionnés :
-1. **Données réglementaires spatialisées** (Tricoteuses, OpenFisca/LexImpact, data.gouv.fr, DataCirco).
-2. **Couche prospective complète** (tendancielle et rétrospective/backcasting, multi-rounds).
-3. **MiroPolis** : simulation multi-agents (Députés IA par groupe parlementaire, Citoyens IA sur
-   population synthétique représentative).
+## 2. Historique — ce qui a été tenté puis retiré (ne pas réintroduire sans qu'on le redemande)
 
-Plan de conception détaillé (historique des décisions, débats de conception) :
-`C:\Users\talal\.claude\plans\now-you-understand-how-idempotent-parrot.md`.
+- Une plateforme complète à 7 couches (PostgreSQL, Celery, comptes/JWT, workflow de publication,
+  comparaison de lois, backtesting, carte de France par région, pipeline OpenFisca/LexImpact,
+  DataCirco) a été entièrement construite puis **entièrement retirée** sur demande explicite : le
+  produit doit rester proche de MiroFish, pas devenir une plateforme d'entreprise.
+- Une proposition de remplacer le moteur de simulation OASIS par un mécanisme d'interaction maison
+  (agents appelés individuellement en boucle, sans sous-processus) a été **explicitement rejetée** :
+  OASIS reste le moteur d'interaction, tel quel.
+- Le frontend contenait, en parallèle, des écrans construits pour cette même plateforme 7-couches
+  (login, admin, comparaison, backtesting, bibliothèque de scénarios en DB) — supprimés du frontend
+  également (voir GEMINI.md §0-§2 pour le détail).
 
-## 2. Principes non négociables (justifiés par l'éthique/le droit/la méthode, pas par le calendrier)
+## 3. Principes non négociables
 
-- **Jamais d'élu nommé individuellement en sortie publique.** Les votes/amendements individuels réels
-  (Tricoteuses) sont exploités en interne uniquement, pour le backtesting et la calibration — jamais
-  affichés comme "ce député votera X".
-- **Tout code de règle légale généré automatiquement (pipeline OpenFisca) passe par une validation
-  humaine avant usage.** Un LLM qui traduit un article de loi en paramètre fiscal exécutable est une
-  aide à la traduction, pas une source de vérité autonome.
-- **Toute publication externe d'un résultat de simulation passe par un workflow de revue humaine**
-  (état de cycle de vie explicite sur un scénario : brouillon → revu → publié).
-- **Distinction permanente et visible entre donnée calculée (OpenFisca) et donnée estimée (agents
-  LLM)** — jamais fusionnées sans étiquette.
-- **Aucune incertitude cachée** : tout indicateur issu de simulation est accompagné d'une variance
-  (calculée par runs en ensemble), jamais un chiffre ponctuel présenté comme certain.
-- **Conformité RGPD et accessibilité RGAA** sont des exigences produit, pas des options.
-- **Vocabulaire imposé** : "enrichissement/calcul par données réelles" (jamais "calibration
-  statistique" abusive) ; "estimation exploratoire" (jamais "prédiction de vote").
+- **Jamais d'élu nommé individuellement.** Les agents "Députés" sont calibrés par **groupe
+  parlementaire**, jamais par élu identifiable — même dans le calcul du vote simulé (§6.2), qui
+  reste agrégé par groupe.
+- **Vocabulaire** : "enrichissement par données réelles" (jamais "calibration statistique" abusive) ;
+  "estimation exploratoire" / "vote simulé" (jamais "prédiction" présentée comme certaine).
+- **Disclaimer visible** sur toute vue affichant un résultat de simulation ou de scénario :
+  *"estimation qualitative générée par IA, ne reflète pas la position officielle des groupes
+  parlementaires ni une prédiction fiable de vote réel."*
+- **Pas de DB, pas de file de jobs, pas de compte utilisateur.** Stockage fichier uniquement (comme
+  MiroFish natif) — voir §4.
+- **Toute nouvelle dépendance lourde** (DB, file de jobs, auth) nécessite une demande explicite,
+  cf. §2.
 
-## 3. Architecture en 7 couches
+## 4. Ce qui ne bouge pas (cœur MiroFish, ne pas réécrire)
 
-### Couche 1 — Données réglementaires spatialisées
-- **Tricoteuses** : client GraphQL live vers `assemblee.tricoteuses.fr` (composition des groupes,
-  historique de votes/amendements, dossiers législatifs). Synchronisation périodique versionnée par
-  législature, pas un cache figé unique.
-- **OpenFisca-France (via l'approche LexImpact)** : pipeline `loi → règle calculable` :
-  1. Extraction LLM des changements paramétriques candidats du texte de loi.
-  2. Rapprochement avec un dictionnaire de correspondance entretenu vers les paramètres
-     OpenFisca-France connus (+ fuzzy matching pour les cas ambigus).
-  3. Simulation sur une batterie de cas types représentatifs (pondérés INSEE).
-  4. **Étape de validation humaine obligatoire** avant que le résultat entre dans un scénario publiable.
-- **data.gouv.fr (serveur MCP officiel)** : requêtes live pour tout jeu de données pertinent
-  (artificialisation des sols/ZAN via Cerema, budgets carbone, emploi territorial).
-- **DataCirco** : données agrégées par circonscription électorale — c'est la granularité cible pour
-  la carte, la région n'est qu'un niveau de repli.
+| Fichier | Rôle |
+|---|---|
+| `backend/app/services/graph_builder.py`, `zep_entity_reader.py`, `zep_tools.py`, `zep_graph_memory_updater.py` | Pipeline graphe/mémoire Zep |
+| `backend/app/services/simulation_runner.py`, `simulation_ipc.py`, `simulation_manager.py` | Orchestration OASIS (sous-processus), IPC, Interview |
+| `backend/scripts/run_twitter_simulation.py`, `run_reddit_simulation.py`, `run_parallel_simulation.py`, `action_logger.py` | Scripts exécutés par le sous-processus OASIS, tournent sous `backend/.venv311` |
+| `backend/.venv311` | Environnement Python 3.11 dédié — **toujours nécessaire**, `camel-oasis` ne s'installe pas sous Python 3.12 (contrainte réelle, vérifiée, indépendante de toute décision produit) |
+| `backend/app/models/project.py`, `task.py` | Stockage fichier JSON, jamais remplacé par une DB |
+| `backend/app/utils/*` | `llm_client.py`, `locale.py`, `logger.py`, `retry.py`, `zep_paging.py`, `file_parser.py` |
+| `backend/app/api/graph.py` | Endpoints d'upload/ontologie/graphe |
 
-### Couche 2 — Simulation sociale (MiroPolis, échelle réelle)
-- **Population synthétique de citoyens** générée par calage par marges (iterative proportional
-  fitting) sur les distributions croisées réelles INSEE (âge × CSP × région × revenu) — un vrai actif
-  méthodologique, pas un simple gonflage du nombre d'agents.
-- **Députés IA** : un agent par groupe parlementaire en sortie publique ; modélisation interne plus
-  fine (rapporteurs, tendances internes) possible, toujours agrégée avant affichage externe.
-- **Couche de vote agrégée** au-dessus du débat OASIS natif (post/comment/like) : simule une
-  majorité/minorité réelle en respectant les poids de sièges par groupe.
-- **Module de backtesting** : rejoue d'anciens textes de loi (débats pré-vote réels via Tricoteuses),
-  compare le résultat simulé au vote historique réel, publie des métriques de calibration/exactitude
-  dans un tableau de bord dédié (voir couche 7).
+## 5. Sources de données réelles
 
-### Couche 3 — Temporelle (moteur prospectif complet)
-- Moteur multi-rounds (chaque round = une période), état et mémoire d'agent conservés entre rounds
-  via la mémoire temporelle de graphe déjà présente dans MiroFish (`zep_graph_memory_updater.py`).
-- **Mode tendanciel** : simulation en avant sous la politique actuelle, N périodes.
-- **Mode rétrospectif/backcasting** : recherche de trajectoires de décisions plausibles vers un futur
-  cible (boucle proposition LLM + évaluation par le panel d'agents), plusieurs trajectoires candidates
-  comparées et classées.
-- **Gestion de l'incertitude** : chaque scénario tourne plusieurs fois (ensemble), la variance est
-  systématiquement rapportée.
+- `backend/app/services/regulatory_data/tricoteuses_client.py` — `fetch_parliamentary_groups()` :
+  composition réelle des groupes parlementaires **et effectifs réels** (vérifié fonctionnel : 12
+  groupes, 577 sièges au total, dataset officiel data.gouv.fr "Groupes politiques actifs de
+  l'Assemblée nationale", mis à jour automatiquement — colonnes `nombreMembres`, `couleurAssociee`,
+  et des indicateurs comportementaux réels du groupe (`scoreRose`, `socreCohesion`,
+  `scoreParticipation` dans le CSV source) exploitables pour enrichir encore la persona).
+- `backend/app/services/regulatory_data/datagouv_mcp_client.py` — client générique data.gouv.fr,
+  utilisé par `tricoteuses_client`.
+- `backend/app/services/population_synthesizer.py` — calage IPF sur distributions INSEE
+  (âge/CSP/région), génère les archétypes citoyens pondérés (vérifié fonctionnel : les poids
+  démographiques d'un run somment à 1.0).
+- `backend/app/services/vote_aggregation.py` — agrégation d'un ensemble de positions de groupes
+  (support/oppose/abstain/undecided) en un résultat de vote pondéré par sièges réels, avec
+  détection explicite d'incertitude (`outcome: "uncertain"` si plus de 15% des sièges sont
+  indécis — jamais un résultat tranché arbitrairement). **Câblé dans `scenario_agent.py`** (§6.2).
 
-### Couche 4 — Comparaison de lois
-- Comparaison A/B/N réelle, plusieurs variantes en parallèle via la file de jobs (couche 5).
-- Comparaison possible au niveau d'un article ou d'un amendement, pas seulement du texte entier.
-- Tableau de bord unifié : cartes côte à côte, graphiques d'écarts avec intervalles de variance.
+### Limite honnête sur "le programme de leur parti"
 
-### Couche 5 — Infrastructure de production
-- **PostgreSQL** remplace le stockage JSON fichier de MiroFish pour tous les modèles (Project,
-  Simulation, Scenario, Comparison, BacktestRun, User).
-- **Celery + Redis** (ou équivalent) remplace le threading + IPC fichier pour l'orchestration des
-  simulations et des jobs OpenFisca/backtesting — retries, supervision, scalabilité horizontale.
-- **Comptes et permissions** : comptes réels pour le personnel/élus AN, rôles (créer une simulation,
-  publier un résultat, administrer les données de référence).
-- **Observabilité** : logs structurés, tableau de bord de métriques (durée des runs, coût LLM/Zep,
-  taux d'erreur), alerting.
+Le "programme de leur parti" (§1) n'est **pas** alimenté par un document de programme officiel
+verbatim — aucune source de ce type n'a été identifiée/branchée. La ligne politique du groupe dans
+les personas (`oasis_profile_generator.py`) repose sur (a) le nom réel du groupe (que la
+connaissance générale du LLM associe à une ligne politique connue) et (b) les indicateurs
+comportementaux réels du groupe (cohésion, participation, `scoreRose`) listés ci-dessus. C'est une
+approximation raisonnable, pas un fait à présenter comme calibré sur un texte de programme réel — à
+formuler ainsi dans toute documentation utilisateur.
 
-### Couche 6 — Produit utilisateur
-- Scénarios sauvegardés, comparables dans le temps, annotables, partageables en interne AN.
-- Historique de chat/interview persistant par utilisateur, exportable.
-- Carte à granularité circonscription, recherche/filtre par circonscription.
-- Exports professionnels (PDF, CSV/JSON).
+## 6. Les deux agents en sortie de simulation
 
-### Couche 7 — Gouvernance et rigueur
-- Tableau de bord de transparence du backtesting (métriques de calibration vs votes historiques réels).
-- Workflow de revue humaine avant toute publication externe (état de cycle de vie du scénario).
-- Conformité RGPD complète (DPIA si nécessaire), validation continue avec les canaux juridiques de l'AN.
+Les deux agents lisent la **même mémoire** (le graphe Zep peuplé par la simulation OASIS), mais
+produisent des documents séparés (`report_id` ≠ `scenario_id`), générés/affichés indépendamment.
 
-## 4. Ce qu'on réutilise de MiroFish (base du backend)
+### 6.1 Agent de recap — `report_agent.py` (existant, adapté)
 
-| Fichier existant | Rôle | Évolution |
-|---|---|---|
-| `backend/app/__init__.py` | Factory Flask | Ajout de l'init DB/Celery |
-| `backend/app/config.py` | Config/env | Étendu (DB, Redis, clients Tricoteuses/OpenFisca/data.gouv) |
-| `backend/app/utils/llm_client.py` | Wrapper LLM | Inchangé dans son principe |
-| `backend/app/services/ontology_generator.py` | Ontologie par LLM | Prompt adapté au domaine législatif |
-| `backend/app/services/graph_builder.py` | Graphe Zep | Conservé, alimenté aussi par les nouvelles couches de données |
-| `backend/app/services/oasis_profile_generator.py` | Personas d'agents | Remplacé/étendu par le générateur de population synthétique (couche 2) |
-| `backend/app/services/simulation_runner.py` | Orchestration OASIS + Interview | Conservé comme moteur de débat, enrichi de la couche de vote agrégée |
-| `backend/app/services/simulation_ipc.py` | IPC fichier | À terme remplacé par les tâches Celery, garder en transition |
-| `backend/app/services/report_agent.py` | Génération de rapport ReACT | Plan de sections étendu (impact chiffré, trajectoires, backtesting) |
-| `backend/app/services/zep_graph_memory_updater.py` | Mémoire temporelle Zep | Cœur du moteur prospectif multi-rounds (couche 3) |
-| `backend/app/models/project.py`, `task.py` | Persistance fichier | Migrés vers des modèles PostgreSQL (ORM à introduire, ex. SQLAlchemy) |
+Plan à 5 sections fixes : synthèse décideur, cartographie des parties prenantes, réactions et
+positions observées, points de blocage, recommandations. Doit couvrir les 3 axes d'impact cités en
+§1 (pouvoir d'achat, environnement, services publics) dans la section "réactions et positions
+observées" — à vérifier/renforcer si les sorties générées les omettent.
 
-## 5. Nouveaux modules backend
+### 6.2 Agent de scénario tendanciel — `scenario_agent.py` (nouveau)
 
-- `backend/app/services/regulatory_data/tricoteuses_client.py` — client GraphQL Tricoteuses.
-- `backend/app/services/regulatory_data/openfisca_pipeline.py` — pipeline loi → règle calculable
-  (extraction LLM, rapprochement paramètres, simulation, validation humaine).
-- `backend/app/services/regulatory_data/datagouv_mcp_client.py` — requêtes live via le serveur MCP.
-- `backend/app/services/regulatory_data/datacirco_client.py` — données par circonscription.
-- `backend/app/services/population_synthesizer.py` — génération de population synthétique (IPF sur
-  distributions INSEE).
-- `backend/app/services/vote_aggregation.py` — couche de vote (poids de sièges, majorité/minorité).
-- `backend/app/services/backtesting_engine.py` — rejoue d'anciens textes, calcule les métriques de
-  calibration.
-- `backend/app/services/temporal_engine.py` — moteur multi-rounds tendanciel/rétrospectif.
-- `backend/app/services/comparison_engine.py` — orchestration de la comparaison multi-lois.
-- `backend/app/tasks/` — tâches Celery (une par type de job long : construction de graphe, simulation,
-  backtesting, comparaison).
-- `backend/app/models/` — modèles ORM (User, Role, Project, Scenario, Simulation, ComparisonRun,
-  BacktestRun, Round).
+Même principe que `report_agent.py` (recherche outillée sur le graphe via `zep_tools.py`,
+notamment `insight_forge`), mais agent **séparé**, avec un plan à 3 sections resserré (état actuel
+observé, trajectoire tendancielle, points de bascule).
 
-## 6. Contrat d'API partagé avec le frontend (SECTION CRITIQUE — identique dans GEMINI.md)
+**Calcule et expose un vote simulé réel** (`ScenarioAgent._compute_vote_outcome`, concrétise
+"Ils ... votent sur le texte soumis") :
+1. Récupère la composition réelle des groupes (`tricoteuses_client.fetch_parliamentary_groups()`).
+2. Demande au LLM d'extraire, à partir de la mémoire de simulation (recherche `insight_forge`), la
+   position de **chaque groupe réel listé** (support/oppose/abstain/undecided) — jamais de position
+   inventée pour un groupe non mentionné dans la mémoire (défaut : `undecided`).
+3. Agrège via `vote_aggregation.aggregate_vote()` : résultat pondéré par sièges réels, avec
+   détection d'incertitude.
+4. Résultat exposé dans `ScenarioReport.vote_outcome` (voir contrat §7) et injecté dans le contexte
+   de la première section ("État actuel observé") pour que la narration s'appuie dessus.
 
-### Endpoints hérités de MiroFish (adaptés au domaine, mécanique conservée)
-Upload/ontologie/graphe, création/préparation/démarrage de simulation, interview live, génération de
-rapport/chat — mécanique conservée, payloads étendus au vocabulaire législatif.
+Dégrade proprement à `vote_outcome: null` si les données réelles ou l'extraction échouent — ne
+casse jamais la génération des sections narratives.
 
-### Nouveaux endpoints
+## 7. Contrat d'API (IDENTIQUE à GEMINI.md)
 
-- `GET /api/simulation/<id>/map-data?granularity=region|circonscription`
-```json
-{
-  "granularity": "circonscription",
-  "areas": [
-    {
-      "code": "75-01",
-      "name": "1re circonscription de Paris",
-      "qualitative_score": 2,
-      "qualitative_score_scale": [-2, -1, 0, 1, 2],
-      "openfisca_indicator": { "available": true, "label": "Impact moyen sur l'APL", "value": -34.2, "unit": "EUR/mois", "confidence_interval": [-40.1, -28.3] },
-      "archetype_count": 128,
-      "top_archetypes": ["Locataire jeune actif", "Retraité urbain"]
-    }
-  ],
-  "disclaimer": "estimation exploratoire, distincte des données calculées — voir légende"
-}
-```
-- `GET /api/backtesting/runs`, `POST /api/backtesting/runs` — lancer/consulter un run de backtesting,
-  retourne les métriques de calibration (taux d'accord simulé/réel, par groupe, par type de texte).
-- `POST /api/temporal/scenario` — configuration d'un scénario prospectif (mode tendanciel/rétrospectif,
-  nombre de rounds, futur cible si rétrospectif).
-- `GET /api/temporal/scenario/<id>/rounds` — liste des rounds avec indicateurs et variance.
-- `POST /api/comparison/runs` — lance une comparaison A/B/N de lois/variantes.
-- `GET /api/comparison/runs/<id>` — résultat consolidé (cartes, écarts, intervalles).
-- `POST /api/scenarios/<id>/publish` — déclenche le workflow de revue humaine avant publication externe.
-- Auth : `POST /api/auth/login`, gestion de session/JWT, endpoints protégés par rôle.
+### Hérité, inchangé
+`/api/graph/ontology/generate`, `/api/graph/build`, `/api/graph/task/<id>`,
+`/api/simulation/create`, `/prepare`, `/prepare/status`, `/start`, `/<id>/run-status`,
+`/<id>/actions`, `/<id>/profiles`, `/interview` ; `/api/report/generate`, `/generate/status`
+(POST), `/<report_id>`.
 
-## 7. Conventions de code
+### Agent de scénario tendanciel
+- `POST /api/scenario/generate` — `{simulation_id, force_regenerate?}` → `{scenario_id, task_id, status}`.
+- `POST /api/scenario/generate/status` — `{task_id}` ou `{simulation_id}` → statut de tâche.
+- `GET /api/scenario/<scenario_id>` →
+  ```json
+  {
+    "scenario_id": "...", "simulation_id": "...", "status": "completed",
+    "title": "...",
+    "sections": [{"title": "...", "content": "..."}],
+    "vote_outcome": {
+      "total_seats": 577, "support_seats": 300, "oppose_seats": 200,
+      "abstain_seats": 30, "undecided_seats": 47,
+      "outcome": "adopted", "majority_threshold": 251,
+      "by_group": [{"group_name": "EPR", "seats": 91, "position": "support"}]
+    },
+    "error": null, "created_at": "...", "completed_at": "..."
+  }
+  ```
+  `vote_outcome` peut être `null` (dégradation propre, voir §6.2) — le frontend doit gérer ce cas
+  sans erreur.
+- `GET /api/scenario/by-simulation/<simulation_id>` → dernier scénario généré pour cette simulation.
 
-- ORM SQLAlchemy pour tous les nouveaux modèles ; migrations Alembic.
-- Tâches longues systématiquement en job Celery, jamais en thread bloquant dans la requête Flask.
-- Un module par source de données externe sous `regulatory_data/`, chacun avec une interface commune
-  (`fetch(theme, territory) -> StructuredResult`) pour rester interchangeable.
-- Tests de calibration du backtesting versionnés et rejouables en CI.
+## 8. Conventions
 
-## 8. Feuille de route (phases)
-
-1. Fondations : couches de données réelles + infra production (DB, Celery) + cœur MiroFish adapté.
-2. Simulation sociale complète : population synthétique, couche de vote, backtesting.
-3. Couche temporelle complète : moteur multi-rounds, mémoire Zep, gestion de l'incertitude.
-4. Comparaison multi-lois + carte par circonscription.
-5. Produit complet : comptes, gouvernance, accessibilité, observabilité, exports.
+- Tout nouveau module de données externes suit le pattern déjà en place dans
+  `regulatory_data/` : dégrader proprement (`available=False` + message clair) plutôt que lever une
+  exception, jamais d'appel réseau live pendant une démo.
+- Toute fonctionnalité ajoutée doit se rattacher explicitement à la définition de référence du
+  produit (§1) — si une idée ne sert ni le réalisme des Députés/Citoyens IA, ni les 3 axes d'impact
+  cités, ni l'objectif de test d'amendements/consensus, la questionner avant de l'implémenter.

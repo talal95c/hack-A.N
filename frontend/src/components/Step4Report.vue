@@ -8,11 +8,14 @@
           <!-- Report Header -->
           <div class="report-header-block">
             <div class="report-meta">
-              <span class="report-tag">Prediction Report</span>
-              <span class="report-id">ID: {{ reportId || 'REF-2024-X92' }}</span>
+              <span class="report-tag">Estimation exploratoire</span>
+              <span class="report-id">ID: {{ reportId || 'REF-2026-X92' }}</span>
             </div>
             <h1 class="main-title">{{ reportOutline.title }}</h1>
             <p class="sub-title">{{ reportOutline.summary }}</p>
+            <div class="disclaimer-banner" style="margin-top: 12px; padding: 10px 14px; background: #FFFBEB; border: 1px solid #FEF3C7; border-radius: 8px; font-size: 12px; color: #92400E; line-height: 1.4;">
+              <strong>Avertissement :</strong> estimation qualitative générée par IA, ne reflète pas la position officielle des groupes parlementaires ni une prédiction fiable de vote réel.
+            </div>
             <div class="header-divider"></div>
           </div>
 

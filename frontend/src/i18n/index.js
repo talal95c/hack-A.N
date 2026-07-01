@@ -14,11 +14,9 @@ for (const path in localeFiles) {
   }
 }
 
-const savedLocale = localStorage.getItem('locale') || 'fr'
-
 const i18n = createI18n({
   legacy: false,
-  locale: savedLocale,
+  locale: 'fr',
   fallbackLocale: 'fr',
   messages
 })

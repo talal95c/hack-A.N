@@ -1,186 +1,107 @@
 <template>
-  <header class="miro-navbar" role="banner">
-    <div class="nav-brand" @click="$router.push('/')">
-      <span class="logo-icon">⚖️</span>
-      <span class="brand-name">MIROPOLIS</span>
-      <span class="brand-tag">PARLEMENT & PROSPECTIVE</span>
-    </div>
+  <header class="navbar-minimal" role="banner">
+    <div class="nav-container">
+      <!-- Left spacer to maintain exact visual balance -->
+      <div class="nav-left"></div>
 
-    <nav class="nav-menu" role="navigation" aria-label="Menu principal">
-      <router-link to="/" class="nav-item" active-class="active" exact-active-class="active">{{ $t('nav.home') }}</router-link>
-      <router-link to="/scenarios" class="nav-item" active-class="active">{{ $t('nav.scenarios') }}</router-link>
-      <router-link to="/comparison" class="nav-item" active-class="active">
-        {{ $t('nav.comparison') }}
-        <span v-if="compCount > 0" class="badge-count">{{ compCount }}</span>
-      </router-link>
-      <router-link to="/backtesting" class="nav-item" active-class="active">{{ $t('nav.backtesting') }}</router-link>
-      <router-link v-if="authStore.userRole === 'admin'" to="/admin" class="nav-item" active-class="active">{{ $t('nav.admin') }}</router-link>
-    </nav>
-
-    <div class="nav-right">
-      <LanguageSwitcher />
-      
-      <!-- User / Auth -->
-      <div v-if="authStore.isAuthenticated" class="user-pill" @click="$router.push('/admin')">
-        <span class="user-avatar">🏛️</span>
-        <div class="user-details">
-          <span class="user-name">{{ authStore.user?.name || 'Député' }}</span>
-          <span class="user-role">{{ authStore.userRole }}</span>
-        </div>
+      <!-- Center Brand Logo & Name -->
+      <div class="nav-center-brand" @click="$router.push('/')">
+        <img src="../assets/logo/miropolis-logo-black.png" alt="MiroPolis Logo" class="brand-logo" />
+        <span class="brand-name">MiroPolis.</span>
       </div>
-      <button v-else class="login-btn" @click="$router.push('/login')">
-        Connexion Espace Député
-      </button>
+
+      <!-- Right Minimalist Action -->
+      <div class="nav-right">
+        <button class="btn-minimal-create" @click="$router.push('/process/new')">
+          <span>+ Nouvelle simulation</span>
+        </button>
+      </div>
     </div>
   </header>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useAuthStore } from '../store/auth'
-import { useSimulationStore } from '../store/simulation'
-import LanguageSwitcher from './LanguageSwitcher.vue'
-
-const authStore = useAuthStore()
-const simStore = useSimulationStore()
-
-const compCount = computed(() => simStore.comparisonList.length)
 </script>
 
 <style scoped>
-.miro-navbar {
-  height: 64px;
-  background: #000;
-  color: #FFF;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32px;
-  border-bottom: 1px solid #222;
+.navbar-minimal {
   position: sticky;
   top: 0;
   z-index: 1000;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  width: 100%;
+  height: 72px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.2s ease;
 }
 
-.nav-brand {
+.nav-container {
+  max-width: 1360px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+/* Brand Section Centered */
+.nav-center-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 12px;
   cursor: pointer;
+  user-select: none;
 }
 
-.logo-icon {
-  font-size: 20px;
+.brand-logo {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-center-brand:hover .brand-logo {
+  transform: scale(1.06);
 }
 
 .brand-name {
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 800;
-  font-size: 18px;
-  letter-spacing: 1px;
-}
-
-.brand-tag {
-  background: #FF4500;
-  color: #FFF;
-  font-size: 9px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 2px;
+  font-size: 20px;
+  color: #000000;
+  letter-spacing: -0.5px;
 }
 
-.nav-menu {
-  display: flex;
-  gap: 8px;
-}
-
-.nav-item {
-  color: #BBB;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 8px 16px;
-  border-radius: 6px;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.nav-item:hover {
-  color: #FFF;
-  background: rgba(255,255,255,0.08);
-}
-
-.nav-item.active {
-  color: #FFF;
-  background: rgba(255,255,255,0.15);
-}
-
-.badge-count {
-  background: #FF4500;
-  color: #FFF;
-  font-size: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 10px;
-}
-
+/* Right Action Button */
 .nav-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: flex-end;
 }
 
-.user-pill {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #1A1A1A;
-  border: 1px solid #333;
-  padding: 6px 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.user-pill:hover {
-  border-color: #FF4500;
-}
-
-.user-avatar {
-  font-size: 16px;
-}
-
-.user-details {
-  display: flex;
-  flex-direction: column;
-}
-
-.user-name {
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.user-role {
-  font-size: 10px;
-  color: #FF4500;
-  font-family: 'JetBrains Mono', monospace;
-  text-transform: uppercase;
-}
-
-.login-btn {
-  background: #FFF;
-  color: #000;
+.btn-minimal-create {
+  background: #000000;
+  color: #FFFFFF;
   border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  font-size: 13.5px;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-minimal-create:hover {
+  background: #1E293B;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+@media (max-width: 768px) {
+  .nav-container { padding: 0 20px; }
 }
 </style>

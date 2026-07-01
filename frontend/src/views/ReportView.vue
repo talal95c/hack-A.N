@@ -49,14 +49,24 @@
         />
       </div>
 
-      <!-- Right Panel: Step4 报告生成 -->
+      <!-- Right Panel: Restitution de la simulation (Synthèse & Projection dans le temps) -->
       <div class="panel-wrapper right" :style="rightPanelStyle">
+        <div class="result-tabs">
+          <button class="result-tab" :class="{ active: resultTab === 'recap' }" @click="resultTab = 'recap'">Synthèse des Débats</button>
+          <button class="result-tab" :class="{ active: resultTab === 'scenario' }" @click="resultTab = 'scenario'">Projection dans le temps</button>
+        </div>
         <Step4Report
+          v-show="resultTab === 'recap'"
           :reportId="currentReportId"
           :simulationId="simulationId"
           :systemLogs="systemLogs"
           @add-log="addLog"
           @update-status="updateStatus"
+        />
+        <Step4Scenario
+          v-show="resultTab === 'scenario'"
+          :simulationId="simulationId"
+          @add-log="addLog"
         />
       </div>
     </main>
@@ -69,10 +79,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import GraphPanel from '../components/GraphPanel.vue'
 import Step4Report from '../components/Step4Report.vue'
+import Step4Scenario from '../components/Step4Scenario.vue'
 import { getProject, getGraphData } from '../api/graph'
 import { getSimulation } from '../api/simulation'
 import { getReport } from '../api/report'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
+
+const resultTab = ref('recap')
 
 const route = useRoute()
 const router = useRouter()
@@ -349,5 +362,27 @@ onMounted(() => {
 
 .panel-wrapper.left {
   border-right: 1px solid #EAEAEA;
+}
+
+.result-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px 0;
+}
+
+.result-tab {
+  border: 1px solid #E0E0E0;
+  background: #FAFAFA;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.result-tab.active {
+  background: #000;
+  color: #FFF;
+  border-color: #000;
 }
 </style>

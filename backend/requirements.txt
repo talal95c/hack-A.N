@@ -39,26 +39,8 @@ python-dotenv>=1.0.0
 # 数据验证
 pydantic>=2.0.0
 
-# ============= MiroPolis : infrastructure de production (CLAUDE.md §5) =============
-# ORM + migrations (PostgreSQL en prod, SQLite en dev via Config.DATABASE_URL)
-sqlalchemy>=2.0.0
-alembic>=1.13.0
-# File de jobs (mode "eager" sans Redis en dev, cf. Config.CELERY_TASK_ALWAYS_EAGER)
-celery>=5.3.0
-redis>=5.0.0
-# Auth
-flask-jwt-extended>=4.6.0
-# Clients HTTP pour la couche 1 (Tricoteuses, data.gouv.fr, DataCirco)
+# ============= MiroPolis : agents réels (Tricoteuses/data.gouv.fr/INSEE) =============
+# Clients HTTP pour les données réelles (composition des groupes parlementaires via data.gouv.fr)
 requests>=2.31.0
-# Calage statistique (population synthétique, couche 2)
+# Calage statistique IPF (population synthétique citoyenne sur distributions INSEE)
 numpy>=1.26.0
-
-# ============= MiroPolis : couche 1, pipeline OpenFisca/LexImpact (optionnel) =============
-# ⚠️ Vérifié à l'implémentation : openfisca-france s'installe mais ne s'importe pas correctement
-# sous Python 3.12.10 dans cet environnement (TypeError: metaclass conflict dans
-# openfisca_core.types -- incompatibilité connue avec des versions récentes de numpy/typing).
-# backend/app/services/regulatory_data/openfisca_pipeline.py importe ce paquet de façon
-# paresseuse et dégrade proprement (available=False) si l'import échoue -- laissé en dépendance
-# non bloquante ("optionnel") en attendant une version compatible ou un environnement Python 3.11
-# dédié à ce module.
-# openfisca-france
