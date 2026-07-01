@@ -1,0 +1,138 @@
+{
+  "granularity": "region",
+  "areas": [
+    {
+      "code": "11",
+      "name": "Île-de-France",
+      "qualitative_score": -1,
+      "qualitative_score_scale": [-2, -1, 0, 1, 2],
+      "openfisca_indicator": {
+        "available": true,
+        "label": "Impact moyen calculé (OpenFisca)",
+        "value": -42.8,
+        "unit": "€/mois"
+      },
+      "archetype_count": 142,
+      "top_archetypes": ["Cadre", "Employé", "Étudiant"]
+    },
+    {
+      "code": "24",
+      "name": "Centre-Val de Loire",
+      "qualitative_score": 0,
+      "qualitative_score_scale": [-2, -1, 0, 1, 2],
+      "openfisca_indicator": { "available": false },
+      "archetype_count": 31,
+      "top_archetypes": ["Ouvrier", "Retraité", "Agriculteur"]
+    },
+    {
+      "code": "27",
+      "name": "Bourgogne-Franche-Comté",
+      "qualitative_score": 1,
+      "qualitative_score_scale": [-2, -1, 0, 1, 2],
+      "openfisca_indicator": { "available": false },
+      "archetype_count": 38,
+      "top_archetypes": ["Ouvrier", "Employé", "Retraité"]
+    },
+    {
+      "code": "28",
+      "name": "Normandie",
+      "qualitative_score": -1,
+      "qualitative_score_scale": [-2, -1, 0, 1, 2],
+      "openfisca_indicator": { "available": false },
+      "archetype_count": 45,
+      "top_archetypes": ["Employé", "Ouvrier", "Artisan"]
+    },
+    {
+      "code": "32",
+      "name": "Hauts-de-France",
+      "qualitative_score": -2,
+      "qualitative_score_scale": [-2, -1, 0, 1, 2],
+      "openfisca_indicator": {
+        "available": true,
+        "label": "Impact moyen calculé (OpenFisca)",
+        "value": -68.5,
+        "unit": "€/mois"
+      },
+      "archetype_count": 89,
+      "top_archetypes": ["Ouvrier", "Demandeur d'emploi", "Employé"]
+    },
+    {
+      "code": "44",
+      "name": "Grand Est",
+      "qualitative_score": 0,
+      "qualitative_score_scale": [-2, -1, 0, 1, 2],
+      "openfisca_indicator": { "available": false },
+      "archetype_count": 67,
+      "top_archetypes": ["Ouvrier", "Cadre intermédiaire", "Retraité"]
+    },
+    {
+      "code": "52",
+      "name": "Pays de la Loire",
+      "qualitative_score": 1,
+      "qualitative_score_scale": [-2, -1, 0, 1, 2],
+      "openfisca_indicator": { "available": false },
+      "archetype_count": 52,
+      "top_archetypes": ["Employé", "Cadre", "Technicien"]
+    },
+    {
+      "code": "53",
+      "name": "Bretagne",
+      "qualitative_score": 2,
+      "qualitative_score_scale": [-2, -1, 0, 1, 2],
+      "openfisca_indicator": { "available": false },
+      "archetype_count": 48,
+      "top_archetypes": ["Agriculteur", "Cadre", "Retraité"]
+    },
+    {
+      "code": "75",
+      "name": "Nouvelle-Aquitaine",
+      "qualitative_score": 1,
+      "qualitative_score_scale": [-2, -1, 0, 1, 2],
+      "openfisca_indicator": { "available": false },
+      "archetype_count": 76,
+      "top_archetypes": ["Retraité", "Employé", "Cadre"]
+    },
+    {
+      "code": "76",
+      "name": "Occitanie",
+      "qualitative_score": 0,
+      "qualitative_score_scale": [-2, -1, 0, 1, 2],
+      "openfisca_indicator": { "available": false },
+      "archetype_count": 81,
+      "top_archetypes": ["Étudiant", "Employé", "Retraité"]
+    },
+    {
+      "code": "84",
+      "name": "Auvergne-Rhône-Alpes",
+      "qualitative_score": 1,
+      "qualitative_score_scale": [-2, -1, 0, 1, 2],
+      "openfisca_indicator": {
+        "available": true,
+        "label": "Impact moyen calculé (OpenFisca)",
+        "value": -34.2,
+        "unit": "€/mois"
+      },
+      "archetype_count": 115,
+      "top_archetypes": ["Employé", "Cadre", "Ouvrier"]
+    },
+    {
+      "code": "93",
+      "name": "Provence-Alpes-Côte d'Azur",
+      "qualitative_score": -1,
+      "qualitative_score_scale": [-2, -1, 0, 1, 2],
+      "openfisca_indicator": { "available": false },
+      "archetype_count": 72,
+      "top_archetypes": ["Retraité", "Commerçant", "Employé"]
+    },
+    {
+      "code": "94",
+      "name": "Corse",
+      "qualitative_score": 0,
+      "qualitative_score_scale": [-2, -1, 0, 1, 2],
+      "openfisca_indicator": { "available": false },
+      "archetype_count": 12,
+      "top_archetypes": ["Artisan", "Employé", "Retraité"]
+    }
+  ],
+  "disclaimer": "estimation exploratoire, distincte des données calculées — voir légende"
+}

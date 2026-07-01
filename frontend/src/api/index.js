@@ -13,7 +13,11 @@ const service = axios.create({
 // 请求拦截器
 service.interceptors.request.use(
   config => {
-    config.headers['Accept-Language'] = i18n.global.locale.value
+    config.headers['Accept-Language'] = i18n.global.locale.value || 'fr'
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`
+    }
     return config
   },
   error => {

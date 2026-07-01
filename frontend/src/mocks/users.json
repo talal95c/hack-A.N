@@ -1,0 +1,45 @@
+{
+  "success": true,
+  "users": [
+    {
+      "id": "usr_default_01",
+      "name": "Dr. Hélène Moreau",
+      "email": "h.moreau@assemblee-nationale.fr",
+      "role": "admin",
+      "group": "EPR",
+      "status": "active"
+    },
+    {
+      "id": "usr_analyst_02",
+      "name": "Alexandre Laurent",
+      "email": "a.laurent@openfisca-lab.fr",
+      "role": "analyst",
+      "group": "Expertise externe",
+      "status": "active"
+    },
+    {
+      "id": "usr_deputy_03",
+      "name": "Marc Dubois (Député)",
+      "email": "m.dubois@assemblee-nationale.fr",
+      "role": "deputy",
+      "group": "SOC",
+      "status": "active"
+    },
+    {
+      "id": "usr_deputy_04",
+      "name": "Sophie Martin (Collaboratrice)",
+      "email": "s.martin@assemblee-nationale.fr",
+      "role": "deputy",
+      "group": "Dem",
+      "status": "active"
+    },
+    {
+      "id": "usr_viewer_05",
+      "name": "Jean Bernard",
+      "email": "j.bernard@senat.fr",
+      "role": "viewer",
+      "group": "Observateur",
+      "status": "inactive"
+    }
+  ]
+}
