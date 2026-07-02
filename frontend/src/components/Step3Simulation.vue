@@ -704,8 +704,8 @@ onUnmounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #FFFFFF;
-  font-family: 'Space Grotesk', 'Noto Sans SC', system-ui, sans-serif;
+  background: transparent;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   overflow: hidden;
 }
 

@@ -241,21 +241,33 @@ button {
 
 /* Global Typography Enforcement matching Landing Page */
 .main-view,
+.main-view *,
 .simulation-view,
+.simulation-view *,
 .simulation-run-view,
+.simulation-run-view *,
 .report-view,
+.report-view *,
 .interaction-view,
+.interaction-view *,
 .app-header,
-.content-area {
+.app-header *,
+.content-area,
+.content-area * {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 .brand,
+.brand-name,
 .step-num,
 .sec-num,
 code,
 pre,
-.mono-font {
+.mono,
+.mono-font,
+.uuid,
+[class*="code"],
+[class*="mono"] {
   font-family: 'JetBrains Mono', monospace !important;
 }
 
