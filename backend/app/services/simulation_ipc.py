@@ -148,7 +148,7 @@ class SimulationIPCClient:
         with open(command_file, 'w', encoding='utf-8') as f:
             json.dump(command.to_dict(), f, ensure_ascii=False, indent=2)
         
-        logger.info(f"发送IPC命令: {command_type.value}, command_id={command_id}")
+        logger.info(f"Envoi de la commande IPC : {command_type.value}, command_id={command_id}")
         
         # 等待响应
         response_file = os.path.join(self.responses_dir, f"{command_id}.json")
@@ -168,15 +168,15 @@ class SimulationIPCClient:
                     except OSError:
                         pass
                     
-                    logger.info(f"收到IPC响应: command_id={command_id}, status={response.status.value}")
+                    logger.info(f"Réponse IPC reçue : command_id={command_id}, status={response.status.value}")
                     return response
                 except (json.JSONDecodeError, KeyError) as e:
-                    logger.warning(f"解析响应失败: {e}")
-            
+                    logger.warning(f"Échec de l'analyse de la réponse : {e}")
+
             time.sleep(poll_interval)
-        
+
         # 超时
-        logger.error(f"等待IPC响应超时: command_id={command_id}")
+        logger.error(f"Délai d'attente de la réponse IPC dépassé : command_id={command_id}")
         
         # 清理命令文件
         try:
@@ -354,7 +354,7 @@ class SimulationIPCServer:
                     data = json.load(f)
                 return IPCCommand.from_dict(data)
             except (json.JSONDecodeError, KeyError, OSError) as e:
-                logger.warning(f"读取命令文件失败: {filepath}, {e}")
+                logger.warning(f"Échec de lecture du fichier de commande : {filepath}, {e}")
                 continue
         
         return None

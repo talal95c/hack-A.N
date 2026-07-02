@@ -13,7 +13,7 @@
       <!-- Right Minimalist Action -->
       <div class="nav-right">
         <button class="btn-minimal-create" @click="$router.push('/process/new')">
-          <span>+ Nouvelle simulation</span>
+          <span>Nouvelle simulation</span>
         </button>
       </div>
     </div>

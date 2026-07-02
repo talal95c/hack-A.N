@@ -223,7 +223,7 @@ class SimulationManager:
         )
         
         self._save_simulation_state(state)
-        logger.info(f"创建模拟: {simulation_id}, project={project_id}, graph={graph_id}")
+        logger.info(f"Simulation créée : {simulation_id}, project={project_id}, graph={graph_id}")
         
         return state
     
@@ -297,7 +297,7 @@ class SimulationManager:
             
             if filtered.filtered_count == 0:
                 state.status = SimulationStatus.FAILED
-                state.error = "没有找到符合条件的实体，请检查图谱是否正确构建"
+                state.error = "Aucune entité correspondante trouvée, veuillez vérifier que le graphe a été correctement construit"
                 self._save_simulation_state(state)
                 return state
             
@@ -442,13 +442,13 @@ class SimulationManager:
             state.status = SimulationStatus.READY
             self._save_simulation_state(state)
             
-            logger.info(f"模拟准备完成: {simulation_id}, "
+            logger.info(f"Préparation de la simulation terminée : {simulation_id}, "
                        f"entities={state.entities_count}, profiles={state.profiles_count}")
-            
+
             return state
-            
+
         except Exception as e:
-            logger.error(f"模拟准备失败: {simulation_id}, error={str(e)}")
+            logger.error(f"Échec de la préparation de la simulation : {simulation_id}, error={str(e)}")
             import traceback
             logger.error(traceback.format_exc())
             state.status = SimulationStatus.FAILED
@@ -520,10 +520,10 @@ class SimulationManager:
                 "parallel": f"python {scripts_dir}/run_parallel_simulation.py --config {config_path}",
             },
             "instructions": (
-                f"1. 激活conda环境: conda activate MiroFish\n"
-                f"2. 运行模拟 (脚本位于 {scripts_dir}):\n"
-                f"   - 单独运行Twitter: python {scripts_dir}/run_twitter_simulation.py --config {config_path}\n"
-                f"   - 单独运行Reddit: python {scripts_dir}/run_reddit_simulation.py --config {config_path}\n"
-                f"   - 并行运行双平台: python {scripts_dir}/run_parallel_simulation.py --config {config_path}"
+                f"1. Activer l'environnement conda : conda activate MiroFish\n"
+                f"2. Lancer la simulation (scripts situés dans {scripts_dir}) :\n"
+                f"   - Lancer Twitter seul : python {scripts_dir}/run_twitter_simulation.py --config {config_path}\n"
+                f"   - Lancer Reddit seul : python {scripts_dir}/run_reddit_simulation.py --config {config_path}\n"
+                f"   - Lancer les deux plateformes en parallèle : python {scripts_dir}/run_parallel_simulation.py --config {config_path}"
             )
         }

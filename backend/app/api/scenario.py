@@ -107,7 +107,7 @@ def generate_scenario():
             },
         })
     except Exception as e:
-        logger.error(f"启动场景生成任务失败: {str(e)}")
+        logger.error(f"Échec du démarrage de la tâche de génération de scénario : {str(e)}")
         return jsonify({"success": False, "error": str(e), "traceback": traceback.format_exc()}), 500
 
 
@@ -139,7 +139,7 @@ def get_generate_status():
 
         return jsonify({"success": True, "data": task.to_dict()})
     except Exception as e:
-        logger.error(f"查询场景任务状态失败: {str(e)}")
+        logger.error(f"Échec de la vérification du statut de la tâche de scénario : {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -151,7 +151,7 @@ def get_scenario(scenario_id: str):
             return jsonify({"success": False, "error": t('api.reportNotFound', id=scenario_id)}), 404
         return jsonify({"success": True, "data": report.to_dict()})
     except Exception as e:
-        logger.error(f"获取场景失败: {str(e)}")
+        logger.error(f"Échec de la récupération du scénario : {str(e)}")
         return jsonify({"success": False, "error": str(e), "traceback": traceback.format_exc()}), 500
 
 
@@ -163,5 +163,5 @@ def get_scenario_by_simulation(simulation_id: str):
             return jsonify({"success": False, "error": t('api.noReportForSim', id=simulation_id), "has_scenario": False}), 404
         return jsonify({"success": True, "data": report.to_dict(), "has_scenario": True})
     except Exception as e:
-        logger.error(f"获取场景失败: {str(e)}")
+        logger.error(f"Échec de la récupération du scénario : {str(e)}")
         return jsonify({"success": False, "error": str(e), "traceback": traceback.format_exc()}), 500

@@ -176,4 +176,86 @@ button {
   font-family: inherit;
   outline: none;
 }
+
+/* ==========================================
+   GLOBAL LANDING PAGE AESTHETICS (CARRIED OVER TO ALL PAGES)
+   ========================================== */
+
+/* CAD Architectural Dimension Badges Global */
+.cad-dimension {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 10px;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 12px;
+  color: #64748B;
+  letter-spacing: 0.5px;
+  padding: 4px 14px !important;
+  border-radius: var(--radius-pill) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s ease;
+}
+
+.cad-dimension:hover {
+  background: #FFFFFF !important;
+  border-color: #000000 !important;
+  color: #000000 !important;
+}
+
+/* Highlight Yellow & Blue Global Tokens */
+.highlight-yellow {
+  background-color: #FFC800;
+  color: #000000;
+  padding: 2px 14px;
+  border-radius: 4px;
+  display: inline-block;
+  font-weight: 700;
+}
+
+.highlight-blue {
+  background-color: #2563EB;
+  color: #FFFFFF;
+  padding: 2px 14px;
+  border-radius: 4px;
+  display: inline-block;
+  font-weight: 700;
+}
+
+/* Sleek Wireframe Boxes Global Glassmorphism */
+.wireframe-box {
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 24px !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.035) !important;
+  transition: all 0.25s ease;
+}
+
+.wireframe-box:hover {
+  border-color: #CBD5E1 !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.065) !important;
+}
+
+/* Global Typography Enforcement matching Landing Page */
+.main-view,
+.simulation-view,
+.simulation-run-view,
+.report-view,
+.interaction-view,
+.app-header,
+.content-area {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+.brand,
+.step-num,
+.sec-num,
+code,
+pre,
+.mono-font {
+  font-family: 'JetBrains Mono', monospace !important;
+}
 </style>

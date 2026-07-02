@@ -148,15 +148,15 @@ def generate_ontology():
         }
     """
     try:
-        logger.info("=== 开始生成本体定义 ===")
-        
+        logger.info("=== Début de la génération de la définition d'ontologie ===")
+
         # 获取参数
         simulation_requirement = request.form.get('simulation_requirement', '')
         project_name = request.form.get('project_name', 'Unnamed Project')
         additional_context = request.form.get('additional_context', '')
-        
-        logger.debug(f"项目名称: {project_name}")
-        logger.debug(f"模拟需求: {simulation_requirement[:100]}...")
+
+        logger.debug(f"Nom du projet : {project_name}")
+        logger.debug(f"Besoin de simulation : {simulation_requirement[:100]}...")
         
         if not simulation_requirement:
             return jsonify({
@@ -175,7 +175,7 @@ def generate_ontology():
         # 创建项目
         project = ProjectManager.create_project(name=project_name)
         project.simulation_requirement = simulation_requirement
-        logger.info(f"创建项目: {project.project_id}")
+        logger.info(f"Projet créé : {project.project_id}")
         
         # 保存文件并提取文本
         document_texts = []
@@ -210,10 +210,10 @@ def generate_ontology():
         # 保存提取的文本
         project.total_text_length = len(all_text)
         ProjectManager.save_extracted_text(project.project_id, all_text)
-        logger.info(f"文本提取完成，共 {len(all_text)} 字符")
-        
+        logger.info(f"Extraction du texte terminée, {len(all_text)} caractères au total")
+
         # 生成本体
-        logger.info("调用 LLM 生成本体定义...")
+        logger.info("Appel du LLM pour générer la définition d'ontologie...")
         generator = OntologyGenerator()
         ontology = generator.generate(
             document_texts=document_texts,
@@ -224,7 +224,7 @@ def generate_ontology():
         # 保存本体到项目
         entity_count = len(ontology.get("entity_types", []))
         edge_count = len(ontology.get("edge_types", []))
-        logger.info(f"本体生成完成: {entity_count} 个实体类型, {edge_count} 个关系类型")
+        logger.info(f"Génération de l'ontologie terminée : {entity_count} types d'entités, {edge_count} types de relations")
         
         project.ontology = {
             "entity_types": ontology.get("entity_types", []),
@@ -233,7 +233,7 @@ def generate_ontology():
         project.analysis_summary = ontology.get("analysis_summary", "")
         project.status = ProjectStatus.ONTOLOGY_GENERATED
         ProjectManager.save_project(project)
-        logger.info(f"=== 本体生成完成 === 项目ID: {project.project_id}")
+        logger.info(f"=== Génération de l'ontologie terminée === ID du projet : {project.project_id}")
         
         return jsonify({
             "success": True,
@@ -281,14 +281,14 @@ def build_graph():
         }
     """
     try:
-        logger.info("=== 开始构建图谱 ===")
-        
+        logger.info("=== Début de la construction du graphe ===")
+
         # 检查配置
         errors = []
         if not Config.ZEP_API_KEY:
             errors.append(t('api.zepApiKeyMissing'))
         if errors:
-            logger.error(f"配置错误: {errors}")
+            logger.error(f"Erreur de configuration : {errors}")
             return jsonify({
                 "success": False,
                 "error": t('api.configError', details="; ".join(errors))
@@ -297,7 +297,7 @@ def build_graph():
         # 解析请求
         data = request.get_json() or {}
         project_id = data.get('project_id')
-        logger.debug(f"请求参数: project_id={project_id}")
+        logger.debug(f"Paramètres de la requête : project_id={project_id}")
         
         if not project_id:
             return jsonify({
@@ -363,8 +363,8 @@ def build_graph():
         
         # 创建异步任务
         task_manager = TaskManager()
-        task_id = task_manager.create_task(f"构建图谱: {graph_name}")
-        logger.info(f"创建图谱构建任务: task_id={task_id}, project_id={project_id}")
+        task_id = task_manager.create_task(f"Construction du graphe : {graph_name}")
+        logger.info(f"Tâche de construction de graphe créée : task_id={task_id}, project_id={project_id}")
         
         # 更新项目状态
         project.status = ProjectStatus.GRAPH_BUILDING
@@ -379,7 +379,7 @@ def build_graph():
             set_locale(current_locale)
             build_logger = get_logger('mirofish.build')
             try:
-                build_logger.info(f"[{task_id}] 开始构建图谱...")
+                build_logger.info(f"[{task_id}] Début de la construction du graphe...")
                 task_manager.update_task(
                     task_id, 
                     status=TaskStatus.PROCESSING,
@@ -475,7 +475,7 @@ def build_graph():
                 
                 node_count = graph_data.get("node_count", 0)
                 edge_count = graph_data.get("edge_count", 0)
-                build_logger.info(f"[{task_id}] 图谱构建完成: graph_id={graph_id}, 节点={node_count}, 边={edge_count}")
+                build_logger.info(f"[{task_id}] Construction du graphe terminée : graph_id={graph_id}, nœuds={node_count}, arêtes={edge_count}")
                 
                 # 完成
                 task_manager.update_task(
@@ -494,7 +494,7 @@ def build_graph():
                 
             except Exception as e:
                 # 更新项目状态为失败
-                build_logger.error(f"[{task_id}] 图谱构建失败: {str(e)}")
+                build_logger.error(f"[{task_id}] Échec de la construction du graphe : {str(e)}")
                 build_logger.debug(traceback.format_exc())
                 
                 project.status = ProjectStatus.FAILED

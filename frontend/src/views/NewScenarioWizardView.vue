@@ -13,7 +13,7 @@
           <span class="cad-label">Ajout et analyse d'une nouvelle loi</span>
           <span class="cad-arrow">→|</span>
         </div>
-        <h1>lancer une <span class="bold-text">nouvelle simulation</span></h1>
+        <h1>lancer une <span class="highlight-yellow">nouvelle simulation</span></h1>
         <p class="subtitle">Déposez vos textes ou amendements pour découvrir immédiatement leur impact sur le budget des ménages et sur le vote des députés.</p>
       </div>
 

@@ -27,10 +27,10 @@ def main():
     # 验证配置
     errors = Config.validate()
     if errors:
-        print("配置错误:")
+        print("Erreur de configuration :")
         for err in errors:
             print(f"  - {err}")
-        print("\n请检查 .env 文件中的配置")
+        print("\nVeuillez verifier la configuration dans le fichier .env")
         sys.exit(1)
     
     # 创建应用

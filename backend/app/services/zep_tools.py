@@ -1,11 +1,13 @@
 """
-Zep检索工具服务
-封装图谱搜索、节点读取、边查询等工具，供Report Agent使用
+Service d'outils de recherche Zep
+Encapsule la recherche dans le graphe, la lecture des nœuds, l'interrogation des arêtes et d'autres
+outils, utilisés par le Report Agent
 
-核心检索工具（优化后）：
-1. InsightForge（深度洞察检索）- 最强大的混合检索，自动生成子问题并多维度检索
-2. PanoramaSearch（广度搜索）- 获取全貌，包括过期内容
-3. QuickSearch（简单搜索）- 快速检索
+Outils de recherche principaux (après optimisation) :
+1. InsightForge (recherche d'insights approfondie) - la recherche hybride la plus puissante, génère
+   automatiquement des sous-questions et effectue une recherche multidimensionnelle
+2. PanoramaSearch (recherche panoramique) - obtient une vue d'ensemble, y compris le contenu expiré
+3. QuickSearch (recherche simple) - recherche rapide
 """
 
 import time
@@ -26,13 +28,13 @@ logger = get_logger('mirofish.zep_tools')
 
 @dataclass
 class SearchResult:
-    """搜索结果"""
+    """Résultat de recherche"""
     facts: List[str]
     edges: List[Dict[str, Any]]
     nodes: List[Dict[str, Any]]
     query: str
     total_count: int
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "facts": self.facts,
@@ -41,28 +43,28 @@ class SearchResult:
             "query": self.query,
             "total_count": self.total_count
         }
-    
+
     def to_text(self) -> str:
-        """转换为文本格式，供LLM理解"""
-        text_parts = [f"搜索查询: {self.query}", f"找到 {self.total_count} 条相关信息"]
-        
+        """Convertit au format texte, pour compréhension par le LLM"""
+        text_parts = [f"Requête de recherche : {self.query}", f"{self.total_count} informations pertinentes trouvées"]
+
         if self.facts:
-            text_parts.append("\n### 相关事实:")
+            text_parts.append("\n### Faits pertinents :")
             for i, fact in enumerate(self.facts, 1):
                 text_parts.append(f"{i}. {fact}")
-        
+
         return "\n".join(text_parts)
 
 
 @dataclass
 class NodeInfo:
-    """节点信息"""
+    """Informations du nœud"""
     uuid: str
     name: str
     labels: List[str]
     summary: str
     attributes: Dict[str, Any]
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "uuid": self.uuid,
@@ -71,16 +73,16 @@ class NodeInfo:
             "summary": self.summary,
             "attributes": self.attributes
         }
-    
+
     def to_text(self) -> str:
-        """转换为文本格式"""
-        entity_type = next((l for l in self.labels if l not in ["Entity", "Node"]), "未知类型")
-        return f"实体: {self.name} (类型: {entity_type})\n摘要: {self.summary}"
+        """Convertit au format texte"""
+        entity_type = next((l for l in self.labels if l not in ["Entity", "Node"]), "Type inconnu")
+        return f"Entité : {self.name} (type : {entity_type})\nRésumé : {self.summary}"
 
 
 @dataclass
 class EdgeInfo:
-    """边信息"""
+    """Informations de l'arête"""
     uuid: str
     name: str
     fact: str
@@ -88,7 +90,7 @@ class EdgeInfo:
     target_node_uuid: str
     source_node_name: Optional[str] = None
     target_node_name: Optional[str] = None
-    # 时间信息
+    # Informations temporelles
     created_at: Optional[str] = None
     valid_at: Optional[str] = None
     invalid_at: Optional[str] = None
@@ -110,51 +112,51 @@ class EdgeInfo:
         }
     
     def to_text(self, include_temporal: bool = False) -> str:
-        """转换为文本格式"""
+        """Convertit au format texte"""
         source = self.source_node_name or self.source_node_uuid[:8]
         target = self.target_node_name or self.target_node_uuid[:8]
-        base_text = f"关系: {source} --[{self.name}]--> {target}\n事实: {self.fact}"
-        
+        base_text = f"Relation : {source} --[{self.name}]--> {target}\nFait : {self.fact}"
+
         if include_temporal:
-            valid_at = self.valid_at or "未知"
-            invalid_at = self.invalid_at or "至今"
-            base_text += f"\n时效: {valid_at} - {invalid_at}"
+            valid_at = self.valid_at or "Inconnu"
+            invalid_at = self.invalid_at or "À ce jour"
+            base_text += f"\nValidité : {valid_at} - {invalid_at}"
             if self.expired_at:
-                base_text += f" (已过期: {self.expired_at})"
-        
+                base_text += f" (expiré : {self.expired_at})"
+
         return base_text
-    
+
     @property
     def is_expired(self) -> bool:
-        """是否已过期"""
+        """Indique si c'est expiré"""
         return self.expired_at is not None
-    
+
     @property
     def is_invalid(self) -> bool:
-        """是否已失效"""
+        """Indique si c'est invalidé"""
         return self.invalid_at is not None
 
 
 @dataclass
 class InsightForgeResult:
     """
-    深度洞察检索结果 (InsightForge)
-    包含多个子问题的检索结果，以及综合分析
+    Résultat de la recherche d'insights approfondie (InsightForge)
+    Contient les résultats de recherche pour plusieurs sous-questions, ainsi qu'une analyse synthétique
     """
     query: str
     simulation_requirement: str
     sub_queries: List[str]
-    
-    # 各维度检索结果
-    semantic_facts: List[str] = field(default_factory=list)  # 语义搜索结果
-    entity_insights: List[Dict[str, Any]] = field(default_factory=list)  # 实体洞察
-    relationship_chains: List[str] = field(default_factory=list)  # 关系链
-    
-    # 统计信息
+
+    # Résultats de recherche par dimension
+    semantic_facts: List[str] = field(default_factory=list)  # résultats de la recherche sémantique
+    entity_insights: List[Dict[str, Any]] = field(default_factory=list)  # insights sur les entités
+    relationship_chains: List[str] = field(default_factory=list)  # chaînes de relations
+
+    # Informations statistiques
     total_facts: int = 0
     total_entities: int = 0
     total_relationships: int = 0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "query": self.query,
@@ -169,71 +171,71 @@ class InsightForgeResult:
         }
     
     def to_text(self) -> str:
-        """转换为详细的文本格式，供LLM理解"""
+        """Convertit au format texte détaillé, pour compréhension par le LLM"""
         text_parts = [
-            f"## 未来预测深度分析",
-            f"分析问题: {self.query}",
-            f"预测场景: {self.simulation_requirement}",
-            f"\n### 预测数据统计",
-            f"- 相关预测事实: {self.total_facts}条",
-            f"- 涉及实体: {self.total_entities}个",
-            f"- 关系链: {self.total_relationships}条"
+            f"## Analyse approfondie de la trajectoire tendancielle",
+            f"Question analysée : {self.query}",
+            f"Scénario simulé : {self.simulation_requirement}",
+            f"\n### Statistiques des données",
+            f"- Faits pertinents : {self.total_facts}",
+            f"- Entités concernées : {self.total_entities}",
+            f"- Chaînes de relations : {self.total_relationships}"
         ]
-        
-        # 子问题
+
+        # Sous-questions
         if self.sub_queries:
-            text_parts.append(f"\n### 分析的子问题")
+            text_parts.append(f"\n### Sous-questions analysées")
             for i, sq in enumerate(self.sub_queries, 1):
                 text_parts.append(f"{i}. {sq}")
-        
-        # 语义搜索结果
+
+        # Résultats de la recherche sémantique
         if self.semantic_facts:
-            text_parts.append(f"\n### 【关键事实】(请在报告中引用这些原文)")
+            text_parts.append(f"\n### [Faits clés] (à citer littéralement dans le rapport)")
             for i, fact in enumerate(self.semantic_facts, 1):
                 text_parts.append(f"{i}. \"{fact}\"")
-        
-        # 实体洞察
+
+        # Insights sur les entités
         if self.entity_insights:
-            text_parts.append(f"\n### 【核心实体】")
+            text_parts.append(f"\n### [Entités centrales]")
             for entity in self.entity_insights:
-                text_parts.append(f"- **{entity.get('name', '未知')}** ({entity.get('type', '实体')})")
+                text_parts.append(f"- **{entity.get('name', 'Inconnu')}** ({entity.get('type', 'Entité')})")
                 if entity.get('summary'):
-                    text_parts.append(f"  摘要: \"{entity.get('summary')}\"")
+                    text_parts.append(f"  Résumé : \"{entity.get('summary')}\"")
                 if entity.get('related_facts'):
-                    text_parts.append(f"  相关事实: {len(entity.get('related_facts', []))}条")
-        
-        # 关系链
+                    text_parts.append(f"  Faits pertinents : {len(entity.get('related_facts', []))}")
+
+        # Chaînes de relations
         if self.relationship_chains:
-            text_parts.append(f"\n### 【关系链】")
+            text_parts.append(f"\n### [Chaînes de relations]")
             for chain in self.relationship_chains:
                 text_parts.append(f"- {chain}")
-        
+
         return "\n".join(text_parts)
 
 
 @dataclass
 class PanoramaResult:
     """
-    广度搜索结果 (Panorama)
-    包含所有相关信息，包括过期内容
+    Résultat de la recherche panoramique (Panorama)
+    Contient toutes les informations pertinentes, y compris le contenu expiré
     """
     query: str
-    
-    # 全部节点
+
+    # Tous les nœuds
     all_nodes: List[NodeInfo] = field(default_factory=list)
-    # 全部边（包括过期的）
+    # Toutes les arêtes (y compris expirées)
     all_edges: List[EdgeInfo] = field(default_factory=list)
-    # 当前有效的事实
+    # Faits actuellement valides
     active_facts: List[str] = field(default_factory=list)
-    # 已过期/失效的事实（历史记录）
+    # Faits expirés/invalidés (historique)
     historical_facts: List[str] = field(default_factory=list)
-    
-    # 统计
+
+    # Statistiques
     total_nodes: int = 0
     total_edges: int = 0
     active_count: int = 0
     historical_count: int = 0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "query": self.query,
@@ -248,49 +250,49 @@ class PanoramaResult:
         }
     
     def to_text(self) -> str:
-        """转换为文本格式（完整版本，不截断）"""
+        """Convertit au format texte (version complète, sans troncature)"""
         text_parts = [
-            f"## 广度搜索结果（未来全景视图）",
-            f"查询: {self.query}",
-            f"\n### 统计信息",
-            f"- 总节点数: {self.total_nodes}",
-            f"- 总边数: {self.total_edges}",
-            f"- 当前有效事实: {self.active_count}条",
-            f"- 历史/过期事实: {self.historical_count}条"
+            f"## Résultat de la recherche panoramique (vue d'ensemble)",
+            f"Requête : {self.query}",
+            f"\n### Statistiques",
+            f"- Nombre total de nœuds : {self.total_nodes}",
+            f"- Nombre total d'arêtes : {self.total_edges}",
+            f"- Faits actuellement valides : {self.active_count}",
+            f"- Faits historiques/expirés : {self.historical_count}"
         ]
-        
-        # 当前有效的事实（完整输出，不截断）
+
+        # Faits actuellement valides (sortie complète, sans troncature)
         if self.active_facts:
-            text_parts.append(f"\n### 【当前有效事实】(模拟结果原文)")
+            text_parts.append(f"\n### [Faits actuellement valides] (texte original des résultats de simulation)")
             for i, fact in enumerate(self.active_facts, 1):
                 text_parts.append(f"{i}. \"{fact}\"")
-        
-        # 历史/过期事实（完整输出，不截断）
+
+        # Faits historiques/expirés (sortie complète, sans troncature)
         if self.historical_facts:
-            text_parts.append(f"\n### 【历史/过期事实】(演变过程记录)")
+            text_parts.append(f"\n### [Faits historiques/expirés] (trace de l'évolution)")
             for i, fact in enumerate(self.historical_facts, 1):
                 text_parts.append(f"{i}. \"{fact}\"")
-        
-        # 关键实体（完整输出，不截断）
+
+        # Entités clés (sortie complète, sans troncature)
         if self.all_nodes:
-            text_parts.append(f"\n### 【涉及实体】")
+            text_parts.append(f"\n### [Entités concernées]")
             for node in self.all_nodes:
-                entity_type = next((l for l in node.labels if l not in ["Entity", "Node"]), "实体")
+                entity_type = next((l for l in node.labels if l not in ["Entity", "Node"]), "Entité")
                 text_parts.append(f"- **{node.name}** ({entity_type})")
-        
+
         return "\n".join(text_parts)
 
 
 @dataclass
 class AgentInterview:
-    """单个Agent的采访结果"""
+    """Résultat d'interview d'un seul Agent"""
     agent_name: str
-    agent_role: str  # 角色类型（如：学生、教师、媒体等）
-    agent_bio: str  # 简介
-    question: str  # 采访问题
-    response: str  # 采访回答
-    key_quotes: List[str] = field(default_factory=list)  # 关键引言
-    
+    agent_role: str  # type de rôle (ex : étudiant, enseignant, média, etc.)
+    agent_bio: str  # biographie
+    question: str  # question d'interview
+    response: str  # réponse d'interview
+    key_quotes: List[str] = field(default_factory=list)  # citations clés
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "agent_name": self.agent_name,
@@ -300,34 +302,34 @@ class AgentInterview:
             "response": self.response,
             "key_quotes": self.key_quotes
         }
-    
+
     def to_text(self) -> str:
         text = f"**{self.agent_name}** ({self.agent_role})\n"
-        # 显示完整的agent_bio，不截断
-        text += f"_简介: {self.agent_bio}_\n\n"
-        text += f"**Q:** {self.question}\n\n"
-        text += f"**A:** {self.response}\n"
+        # Afficher l'agent_bio complet, sans troncature
+        text += f"_Biographie : {self.agent_bio}_\n\n"
+        text += f"**Q :** {self.question}\n\n"
+        text += f"**R :** {self.response}\n"
         if self.key_quotes:
-            text += "\n**关键引言:**\n"
+            text += "\n**Citations clés :**\n"
             for quote in self.key_quotes:
-                # 清理各种引号
-                clean_quote = quote.replace('\u201c', '').replace('\u201d', '').replace('"', '')
-                clean_quote = clean_quote.replace('\u300c', '').replace('\u300d', '')
+                # Nettoyer les différents types de guillemets
+                clean_quote = quote.replace('“', '').replace('”', '').replace('"', '')
+                clean_quote = clean_quote.replace('「', '').replace('」', '')
                 clean_quote = clean_quote.strip()
-                # 去掉开头的标点
-                while clean_quote and clean_quote[0] in '，,；;：:、。！？\n\r\t ':
+                # Retirer la ponctuation en début de chaîne
+                while clean_quote and clean_quote[0] in '，,；;：:、。！？\n\t ':
                     clean_quote = clean_quote[1:]
-                # 过滤包含问题编号的垃圾内容（问题1-9）
+                # Filtrer le contenu parasite contenant un numéro de question (marqueur chinois '问题', question 1-9)
                 skip = False
                 for d in '123456789':
-                    if f'\u95ee\u9898{d}' in clean_quote:
+                    if f'问题{d}' in clean_quote:
                         skip = True
                         break
                 if skip:
                     continue
-                # 截断过长内容（按句号截断，而非硬截断）
+                # Tronquer le contenu trop long (à la limite d'une phrase plutôt qu'une troncature brutale)
                 if len(clean_quote) > 150:
-                    dot_pos = clean_quote.find('\u3002', 80)
+                    dot_pos = clean_quote.find('。', 80)
                     if dot_pos > 0:
                         clean_quote = clean_quote[:dot_pos + 1]
                     else:
