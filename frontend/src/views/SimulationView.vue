@@ -3,7 +3,10 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-left">
-        <div class="brand" @click="router.push('/')">MIROPOLIS</div>
+        <div class="brand-group" @click="router.push('/')">
+          <img src="../assets/logo/miropolis-logo-black.png" alt="MiroPolis Logo" class="brand-logo" />
+          <span class="brand-name">MiroPolis.</span>
+        </div>
       </div>
       
       <div class="header-center">

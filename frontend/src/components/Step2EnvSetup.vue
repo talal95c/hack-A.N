@@ -15,7 +15,6 @@
         </div>
         
         <div class="card-content">
-          <p class="api-note">POST /api/simulation/create</p>
           <p class="description">
             {{ $t('step2.simInstanceDesc') }}
           </p>
@@ -56,7 +55,6 @@
         </div>
 
         <div class="card-content">
-          <p class="api-note">POST /api/simulation/prepare</p>
           <p class="description">
             {{ $t('step2.generateAgentPersonaDesc') }}
           </p>
@@ -128,7 +126,6 @@
         </div>
 
         <div class="card-content">
-          <p class="api-note">POST /api/simulation/prepare</p>
           <p class="description">
             {{ $t('step2.dualPlatformConfigDesc') }}
           </p>
@@ -361,7 +358,6 @@
         </div>
 
         <div class="card-content">
-          <p class="api-note">POST /api/simulation/prepare</p>
           <p class="description">
             {{ $t('step2.initialActivationDesc') }}
           </p>
@@ -432,7 +428,6 @@
         </div>
 
         <div class="card-content">
-          <p class="api-note">POST /api/simulation/start</p>
           <p class="description">{{ $t('step2.setupCompleteDesc') }}</p>
           
           <!-- 模拟轮数配置 - 只有在配置生成完成且轮数计算出来后才显示 -->
@@ -1187,14 +1182,17 @@ onUnmounted(() => {
 .action-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 12px 24px;
+  padding: 14px 28px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   border: none;
-  border-radius: 6px;
+  border-radius: 9999px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
 .action-btn.primary {
@@ -1203,21 +1201,28 @@ onUnmounted(() => {
 }
 
 .action-btn.primary:hover:not(:disabled) {
-  opacity: 0.8;
+  background: #1E293B;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
 }
 
 .action-btn.secondary {
-  background: #F5F5F5;
-  color: #333;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #E2E8F0;
+  color: #334155;
 }
 
 .action-btn.secondary:hover:not(:disabled) {
-  background: #E5E5E5;
+  background: #000;
+  color: #FFF;
+  border-color: #000;
+  transform: translateY(-2px);
 }
 
 .action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .action-group {

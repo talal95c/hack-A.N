@@ -2,7 +2,10 @@
   <div class="process-page">
     <!-- 顶部导航栏 -->
     <nav class="navbar">
-      <div class="nav-brand" @click="goHome">MIROFISH</div>
+      <div class="brand-group" @click="goHome">
+        <img src="../assets/logo/miropolis-logo-black.png" alt="MiroPolis Logo" class="brand-logo" />
+        <span class="brand-name">MiroPolis.</span>
+      </div>
       
       <!-- 中间步骤指示器 -->
       <div class="nav-center">

@@ -16,7 +16,6 @@
         </div>
         
         <div class="card-content">
-          <p class="api-note">POST /api/graph/ontology/generate</p>
           <p class="description">
             {{ $t('step1.ontologyDesc') }}
           </p>
@@ -120,7 +119,6 @@
         </div>
 
         <div class="card-content">
-          <p class="api-note">POST /api/graph/build</p>
           <p class="description">
             {{ $t('step1.graphRagDesc') }}
           </p>
@@ -156,7 +154,6 @@
         </div>
         
         <div class="card-content">
-          <p class="api-note">POST /api/simulation/create</p>
           <p class="description">{{ $t('step1.buildCompleteDesc') }}</p>
           <button 
             class="action-btn" 
@@ -275,11 +272,12 @@ watch(() => props.systemLogs.length, () => {
 <style scoped>
 .workbench-panel {
   height: 100%;
-  background-color: #FAFAFA;
+  background-color: transparent;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .scroll-container {
@@ -292,18 +290,19 @@ watch(() => props.systemLogs.length, () => {
 }
 
 .step-card {
-  background: #FFF;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  border: 1px solid #EAEAEA;
-  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.035);
+  border: 1px solid #E2E8F0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative; /* For absolute overlay */
 }
 
 .step-card.active {
-  border-color: #FF5722;
-  box-shadow: 0 4px 12px rgba(255, 87, 34, 0.08);
+  border-color: #000000;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 .card-header {
@@ -606,20 +605,24 @@ watch(() => props.systemLogs.length, () => {
   background: #000;
   color: #FFF;
   border: none;
-  padding: 14px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 16px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
 }
 
 .action-btn:hover:not(:disabled) {
-  opacity: 0.8;
+  background: #1E293B;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
 }
 
 .action-btn:disabled {
-  background: #CCC;
+  background: #94A3B8;
   cursor: not-allowed;
 }
 

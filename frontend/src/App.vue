@@ -258,4 +258,59 @@ pre,
 .mono-font {
   font-family: 'JetBrains Mono', monospace !important;
 }
+
+/* Hide Technical API Note Texts Everywhere */
+.api-note {
+  display: none !important;
+}
+
+/* Brand Group Matching Landing Page Exactly */
+.brand-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+.brand-group .brand-logo {
+  height: 28px !important;
+  width: auto !important;
+  object-fit: contain !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.brand-group:hover .brand-logo {
+  transform: scale(1.06) !important;
+}
+
+.brand-group .brand-name {
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 20px !important;
+  color: #000000 !important;
+  letter-spacing: -0.5px !important;
+}
+
+/* Global Switch Pill Buttons Matching Landing Page */
+.view-switcher {
+  border-radius: 9999px !important;
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+  padding: 4px !important;
+  gap: 4px !important;
+}
+
+.switch-btn {
+  border-radius: 9999px !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-weight: 600 !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.switch-btn.active {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
 </style>

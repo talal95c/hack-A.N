@@ -822,6 +822,7 @@ onUnmounted(() => {
   background-image: radial-gradient(#D0D0D0 1.5px, transparent 1.5px);
   background-size: 24px 24px;
   overflow: hidden;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .panel-header {
@@ -840,8 +841,9 @@ onUnmounted(() => {
 
 .panel-title {
   font-size: 14px;
-  font-weight: 600;
-  color: #333;
+  font-weight: 700;
+  color: #000;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   pointer-events: auto;
 }
 
@@ -853,26 +855,30 @@ onUnmounted(() => {
 }
 
 .tool-btn {
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid #E0E0E0;
-  background: #FFF;
-  border-radius: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid #E2E8F0;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   cursor: pointer;
-  color: #666;
-  transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  color: #334155;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
   font-size: 13px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 600;
 }
 
 .tool-btn:hover {
-  background: #F5F5F5;
-  color: #000;
-  border-color: #CCC;
+  background: #000;
+  color: #FFF;
+  border-color: #000;
+  transform: translateY(-1px);
 }
 
 .tool-btn .btn-text {
