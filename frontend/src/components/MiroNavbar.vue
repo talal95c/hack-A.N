@@ -42,13 +42,18 @@
   height: 100%;
   margin: 0 auto;
   padding: 0 40px;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  position: relative;
 }
 
 /* Brand Section Centered */
 .nav-center-brand {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -81,6 +86,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  margin-left: auto;
 }
 
 .btn-minimal-create {
@@ -103,5 +109,12 @@
 
 @media (max-width: 768px) {
   .nav-container { padding: 0 20px; }
+}
+
+@media (max-width: 640px) {
+  .nav-center-brand {
+    position: static;
+    transform: none;
+  }
 }
 </style>
