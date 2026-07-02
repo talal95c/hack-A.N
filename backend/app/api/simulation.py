@@ -185,7 +185,7 @@ def create_simulation():
         {
             "project_id": "proj_xxxx",      // obligatoire
             "graph_id": "mirofish_xxxx",    // optionnel, récupéré depuis le projet si non fourni
-            "enable_twitter": true,          // optionnel, true par défaut
+            "enable_twitter": false,         // optionnel, false par défaut (MiroPolis : flux unique)
             "enable_reddit": true            // optionnel, true par défaut
         }
 
@@ -197,7 +197,7 @@ def create_simulation():
                 "project_id": "proj_xxxx",
                 "graph_id": "mirofish_xxxx",
                 "status": "created",
-                "enable_twitter": true,
+                "enable_twitter": false,
                 "enable_reddit": true,
                 "created_at": "2025-12-01T10:00:00"
             }
@@ -231,7 +231,7 @@ def create_simulation():
         state = manager.create_simulation(
             project_id=project_id,
             graph_id=graph_id,
-            enable_twitter=data.get('enable_twitter', True),
+            enable_twitter=data.get('enable_twitter', False),
             enable_reddit=data.get('enable_reddit', True),
         )
         
@@ -1470,7 +1470,7 @@ def start_simulation():
     Requête (JSON) :
         {
             "simulation_id": "sim_xxxx",          // obligatoire, ID de la simulation
-            "platform": "parallel",                // optionnel : twitter / reddit / parallel (par défaut)
+            "platform": "reddit",                  // optionnel : twitter / reddit (par défaut, MiroPolis) / parallel
             "max_rounds": 100,                     // optionnel : nombre maximal de tours de simulation, pour tronquer les simulations trop longues
             "enable_graph_memory_update": false,   // optionnel : mettre à jour dynamiquement ou non la mémoire du graphe Zep avec l'activité des Agents
             "force": false                         // optionnel : redémarrage forcé (arrête la simulation en cours et nettoie les logs)
@@ -1513,7 +1513,7 @@ def start_simulation():
                 "error": t('api.requireSimulationId')
             }), 400
 
-        platform = data.get('platform', 'parallel')
+        platform = data.get('platform', 'reddit')
         max_rounds = data.get('max_rounds')  # optionnel : nombre maximal de tours de simulation
         enable_graph_memory_update = data.get('enable_graph_memory_update', False)  # optionnel : activer ou non la mise à jour de la mémoire du graphe
         force = data.get('force', False)  # optionnel : redémarrage forcé

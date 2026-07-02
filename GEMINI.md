@@ -54,6 +54,11 @@ Le vote simulé (`vote_outcome` dans la réponse de `GET /api/scenario/<id>`) es
 577 sièges réels des 12 groupes parlementaires (data.gouv.fr, vérifié) — `null` si le calcul a
 échoué côté backend, à gérer proprement (pas d'erreur affichée, juste l'absence du bloc vote).
 
+> Note sur "Débat multi-agents (OASIS)" : le design cible est une **plateforme unique** (Reddit,
+> pour son action `CREATE_COMMENT`) plutôt que Twitter+Reddit en parallèle — voir Page 4 ci-dessous
+> et CLAUDE.md §1. Implémentation pas encore faite ; `Step3Simulation.vue` tourne encore sur les
+> deux plateformes historiques aujourd'hui.
+
 ### 1.4 Ce qu'on N'A PAS (ne jamais recoder sans demande explicite)
 
 Comptes/auth/rôles, base de données, file de jobs (Celery), workflow de publication/revue,
@@ -126,6 +131,13 @@ nombre de rounds (`maxRounds`) avant de lancer le débat.
 **Contenu/fonction** : lance `POST /api/simulation/start`, poll `GET .../run-status` et `.../actions`
 pour afficher le débat en temps réel (amendements proposés, soutiens/oppositions des groupes,
 réactions des archétypes citoyens). Moteur OASIS en sous-processus (`.venv311`, transparent ici).
+
+**Cible de design (implémentation à venir, cf. CLAUDE.md §1)** : un **flux unique** au lieu de deux
+panneaux de plateformes parallèles ("Info Plaza"/"Topic Community") — une seule plateforme OASIS
+(Reddit, pour son action `CREATE_COMMENT`) où les Députés publient leurs propositions d'amendement
+et les Citoyens réagissent en commentaire. Aucune restriction technique dure sur qui peut publier ;
+le cadrage vient du prompt de persona de chaque agent. Tant que cette passe de code n'est pas faite,
+`Step3Simulation.vue` affiche encore les deux plateformes historiques.
 **On y arrive** : depuis la page 3 (lancement de la simulation).
 **Action de sortie (déjà câblée, `Step3Simulation.vue`, `handleNextStep`)** : une fois le débat
 terminé, appelle `POST /api/report/generate` (`force_regenerate: true`), récupère `report_id`, puis

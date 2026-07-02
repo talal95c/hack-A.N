@@ -167,15 +167,24 @@ class OasisProfileGenerator:
     ]
 
     # Entités de type individuel (nécessitent la génération d'une persona concrète)
+    # Hérité de l'ancien MiroFish (campus) -- conservé en repli pour compatibilité ascendante.
     INDIVIDUAL_ENTITY_TYPES = [
         "student", "alumni", "professor", "person", "publicfigure",
         "expert", "faculty", "official", "journalist", "activist"
     ]
 
     # Entités de type groupe/institution (nécessitent la génération d'une persona représentative du groupe)
+    # Hérité de l'ancien MiroFish (campus) -- conservé en repli pour compatibilité ascendante.
     GROUP_ENTITY_TYPES = [
         "university", "governmentagency", "organization", "ngo",
         "mediaoutlet", "company", "institution", "group", "community"
+    ]
+
+    # Fragments de nom de type indiquant une institution/un groupe (ex: ParliamentaryGroup,
+    # EnvironmentalNGO, IndustryAssociation, LocalAuthority) -- l'ontology generator invente ces
+    # noms par document (CLAUDE.md §1/§5), donc on matche sur un motif plutôt qu'une liste figée.
+    GROUP_TYPE_SUBSTRINGS = [
+        "parliamentarygroup", "organization", "agency", "authority", "association", "ngo",
     ]
     
     def __init__(
@@ -488,12 +497,24 @@ class OasisProfileGenerator:
         return "\n\n".join(context_parts)
 
     def _is_individual_entity(self, entity_type: str) -> bool:
-        """Détermine s'il s'agit d'une entité de type individuel"""
-        return entity_type.lower() in self.INDIVIDUAL_ENTITY_TYPES
+        """Détermine s'il s'agit d'une entité de type individuel (archétype citoyen MiroPolis, ou
+        type hérité de l'ancien MiroFish). Les archétypes citoyens sont nommés dynamiquement par
+        document par l'ontology generator (TenantArchetype, RuralResidentArchetype, ...), d'où le
+        suffixe "archetype" en plus de la liste figée héritée."""
+        t = entity_type.lower()
+        if t in self.INDIVIDUAL_ENTITY_TYPES:
+            return True
+        if t.endswith("archetype"):
+            return True
+        return not self._is_group_entity(entity_type)
 
     def _is_group_entity(self, entity_type: str) -> bool:
-        """Détermine s'il s'agit d'une entité de type groupe/institution"""
-        return entity_type.lower() in self.GROUP_ENTITY_TYPES
+        """Détermine s'il s'agit d'une entité de type groupe/institution (groupe parlementaire
+        MiroPolis, ou type hérité de l'ancien MiroFish)."""
+        t = entity_type.lower()
+        if t in self.GROUP_ENTITY_TYPES:
+            return True
+        return any(fragment in t for fragment in self.GROUP_TYPE_SUBSTRINGS)
     
     def _generate_profile_with_llm(
         self,
@@ -682,15 +703,18 @@ class OasisProfileGenerator:
                 "un archétype citoyen représentatif, destiné à la simulation d'impact législatif. "
                 "Il ne s'agit pas d'une 'persona d'influenceur' fictive, mais d'un archétype démographique statistiquement "
                 "plausible, dont les attitudes et réactions doivent refléter les enjeux réels du texte de loi pour sa "
-                "situation socio-économique. Tu dois impérativement renvoyer un JSON valide, aucune valeur de chaîne "
-                "ne doit contenir de saut de ligne non échappé."
+                "situation socio-économique. Cet archétype réagit au débat porté par les groupes parlementaires -- il "
+                "commente/évalue, il n'ouvre pas le débat -- et ses réactions portent toujours sur l'impact concret sur "
+                "son pouvoir d'achat, l'environnement, ou les services publics. Tu dois impérativement renvoyer un JSON "
+                "valide, aucune valeur de chaîne ne doit contenir de saut de ligne non échappé."
             )
         else:
             base_prompt = (
                 "Tu es un expert en génération de profils de groupes parlementaires (groupe parlementaire). Ta tâche est "
                 "de générer, à partir de la composition réelle de ce groupe à l'Assemblée nationale, de son nombre de "
                 "sièges et de sa ligne politique (contextualisés par les données ouvertes Tricoteuses), un profil destiné "
-                "à la simulation de débat législatif. **Il ne doit en aucun cas représenter ou faire allusion à un député "
+                "à la simulation de débat législatif. Ce groupe débat, propose des amendements et s'oppose à ceux des "
+                "autres groupes sur le texte soumis. **Il ne doit en aucun cas représenter ou faire allusion à un député "
                 "nommé individuellement** — seule la ligne politique du groupe dans son ensemble est concernée. Tu dois "
                 "impérativement renvoyer un JSON valide, aucune valeur de chaîne ne doit contenir de saut de ligne non échappé."
             )
@@ -729,8 +753,12 @@ Génère un JSON contenant les champs suivants :
    - Informations de base (âge, profession, formation, lieu de résidence)
    - Contexte du personnage (expériences importantes, lien avec l'événement, relations sociales)
    - Traits de caractère (type MBTI, personnalité principale, mode d'expression émotionnelle)
-   - Comportement sur les réseaux sociaux (fréquence de publication, préférences de contenu, style d'interaction, particularités de langage)
-   - Positions et opinions (attitude vis-à-vis du sujet, contenus susceptibles de l'irriter/l'émouvoir)
+   - Comportement sur les réseaux sociaux : cet archétype **réagit** aux publications des groupes
+     parlementaires (commente/répond sous leurs posts) plutôt que d'ouvrir de nouveaux sujets de son
+     propre chef -- son rôle est de réagir au débat, pas de l'initier
+   - Positions et opinions : ses réactions doivent systématiquement porter sur l'impact concret du
+     texte de loi sur **son pouvoir d'achat, l'environnement, et les services publics dont il dépend**
+     (les 3 axes d'évaluation de cet archétype) -- pas une réaction générique "content/pas content"
    - Traits particuliers (expressions favorites, expériences singulières, loisirs personnels)
    - Mémoire personnelle (partie importante de la persona : décrire le lien de cet individu avec l'événement, ainsi que ses actions et réactions déjà observées dans l'événement)
 3. age : nombre correspondant à l'âge (doit être un entier)
@@ -783,7 +811,9 @@ Génère un JSON contenant les champs suivants :
    - Informations institutionnelles de base (nom officiel, nature de l'institution, contexte de création, fonctions principales)
    - Positionnement du compte (type de compte, public cible, fonction principale)
    - Style d'expression (particularités de langage, expressions courantes, sujets tabous)
-   - Caractéristiques du contenu publié (type de contenu, fréquence de publication, créneaux d'activité)
+   - Caractéristiques du contenu publié : s'il s'agit d'un groupe parlementaire, son rôle est de
+     **proposer, débattre et s'opposer aux amendements** du texte soumis, et d'argumenter en réponse
+     aux positions publiées par les autres groupes -- pas de publier du contenu social générique
    - Positions et attitude (position officielle sur les sujets centraux, gestion des controverses)
    - Remarques particulières (profil du groupe représenté, habitudes de gestion du compte)
    - Mémoire institutionnelle (partie importante de la persona institutionnelle : décrire le lien de cette institution avec l'événement, ainsi que ses actions et réactions déjà observées dans l'événement)

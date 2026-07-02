@@ -48,7 +48,9 @@ class SimulationState:
     graph_id: str
     
     # 平台启用状态
-    enable_twitter: bool = True
+    # MiroPolis (CLAUDE.md §1) : flux unique par défaut -- Reddit seul, pour son action
+    # CREATE_COMMENT (les Citoyens réagissent aux publications des Députés).
+    enable_twitter: bool = False
     enable_reddit: bool = True
     
     # 状态
@@ -172,7 +174,7 @@ class SimulationManager:
             simulation_id=simulation_id,
             project_id=data.get("project_id", ""),
             graph_id=data.get("graph_id", ""),
-            enable_twitter=data.get("enable_twitter", True),
+            enable_twitter=data.get("enable_twitter", False),
             enable_reddit=data.get("enable_reddit", True),
             status=SimulationStatus(data.get("status", "created")),
             entities_count=data.get("entities_count", 0),
@@ -195,7 +197,7 @@ class SimulationManager:
         self,
         project_id: str,
         graph_id: str,
-        enable_twitter: bool = True,
+        enable_twitter: bool = False,
         enable_reddit: bool = True,
     ) -> SimulationState:
         """

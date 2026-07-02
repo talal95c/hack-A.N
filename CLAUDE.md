@@ -14,6 +14,16 @@ sans mettre à jour les deux fichiers.
 > Grâce à ce jumeau numérique, le législateur peut tester des formulations d'amendements pour
 > maximiser le consensus ou identifier les angles morts d'une réforme.
 
+Concrètement, ce débat tourne sur un **flux unique** — une seule plateforme OASIS (Reddit,
+retenue pour son action `CREATE_COMMENT`, qui permet à un Citoyen de réagir directement sous la
+publication d'un Député), et non deux plateformes parallèles distinctes type réseau social
+générique. Aucune restriction technique dure n'empêche un Citoyen de publier — le cadrage vient de
+la persona/prompt de chaque agent, qui oriente les Députés vers la proposition/débat d'amendements
+et les Citoyens vers la réaction aux publications des Députés plutôt que l'initiative. *(Cible de
+design ; implémentation à faire dans une passe séparée — voir §2 pour le principe "OASIS reste le
+moteur, tel quel" qui continue de s'appliquer : ceci se joue en configuration et en prompts, jamais
+dans les scripts d'orchestration OASIS.)*
+
 C'est la définition de référence du produit — chaque décision technique de ce document doit s'y
 rattacher explicitement. Trois conséquences directes :
 
@@ -105,6 +115,16 @@ connaissance générale du LLM associe à une ligne politique connue) et (b) les
 comportementaux réels du groupe (cohésion, participation, `scoreRose`) listés ci-dessus. C'est une
 approximation raisonnable, pas un fait à présenter comme calibré sur un texte de programme réel — à
 formuler ainsi dans toute documentation utilisateur.
+
+### Limite honnête sur la classification individu/groupe (bug connu, pas encore corrigé)
+
+Les listes `INDIVIDUAL_ENTITY_TYPES`/`GROUP_ENTITY_TYPES` dans `oasis_profile_generator.py` datent
+encore du vocabulaire de l'ancien MiroFish (student, professor, university, ngo...) et ne
+reconnaissent pas les types réels de l'ontologie MiroPolis (`ParliamentaryGroup`,
+`TenantArchetype`, etc.). Conséquence : la plupart des archétypes citoyens reçoivent aujourd'hui
+par erreur le prompt "groupe parlementaire" au lieu du prompt "citoyen". À corriger dans la passe
+de code à venir sur le débat unifié (voir §1) — tant que ce n'est pas fait, ne pas présenter les
+personas Citoyens générées comme fiables.
 
 ## 6. Les deux agents en sortie de simulation
 

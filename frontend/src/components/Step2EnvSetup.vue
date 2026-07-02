@@ -116,7 +116,7 @@
         <div class="card-header">
           <div class="step-info">
             <span class="step-num">03</span>
-            <span class="step-title">{{ $t('step2.dualPlatformConfig') }}</span>
+            <span class="step-title">{{ $t('step2.hemicycleConfig') }}</span>
           </div>
           <div class="step-status">
             <span v-if="phase > 2" class="badge success">{{ $t('common.completed') }}</span>
@@ -127,7 +127,7 @@
 
         <div class="card-content">
           <p class="description">
-            {{ $t('step2.dualPlatformConfigDesc') }}
+            {{ $t('step2.hemicycleConfigDesc') }}
           </p>
           
           <!-- Config Preview -->
@@ -267,36 +267,9 @@
                 <span class="config-block-title">{{ $t('step2.recommendAlgoConfig') }}</span>
               </div>
               <div class="platforms-grid">
-                <div v-if="simulationConfig.twitter_config" class="platform-card">
-                  <div class="platform-card-header">
-                    <span class="platform-name">{{ $t('step2.platform1Name') }}</span>
-                  </div>
-                  <div class="platform-params">
-                    <div class="param-row">
-                      <span class="param-label">{{ $t('step2.recencyWeight') }}</span>
-                      <span class="param-value">{{ simulationConfig.twitter_config.recency_weight }}</span>
-                    </div>
-                    <div class="param-row">
-                      <span class="param-label">{{ $t('step2.popularityWeight') }}</span>
-                      <span class="param-value">{{ simulationConfig.twitter_config.popularity_weight }}</span>
-                    </div>
-                    <div class="param-row">
-                      <span class="param-label">{{ $t('step2.relevanceWeight') }}</span>
-                      <span class="param-value">{{ simulationConfig.twitter_config.relevance_weight }}</span>
-                    </div>
-                    <div class="param-row">
-                      <span class="param-label">{{ $t('step2.viralThreshold') }}</span>
-                      <span class="param-value">{{ simulationConfig.twitter_config.viral_threshold }}</span>
-                    </div>
-                    <div class="param-row">
-                      <span class="param-label">{{ $t('step2.echoChamberStrength') }}</span>
-                      <span class="param-value">{{ simulationConfig.twitter_config.echo_chamber_strength }}</span>
-                    </div>
-                  </div>
-                </div>
                 <div v-if="simulationConfig.reddit_config" class="platform-card">
                   <div class="platform-card-header">
-                    <span class="platform-name">{{ $t('step2.platform2Name') }}</span>
+                    <span class="platform-name">{{ $t('step2.hemicycleFeedName') }}</span>
                   </div>
                   <div class="platform-params">
                     <div class="param-row">
@@ -516,7 +489,7 @@
               :disabled="phase < 4"
               @click="handleStartSimulation"
             >
-              {{ $t('step2.startDualWorldSim') }} ➝
+              {{ $t('step2.startHemicycleSim') }} ➝
             </button>
           </div>
         </div>
