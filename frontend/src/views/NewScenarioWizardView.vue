@@ -93,7 +93,7 @@
           <div v-if="uploadedFiles.length === 0" class="sample-demo-fill">
             <span class="sample-hint">Ou chargez un texte d'exemple pour tester immédiatement :</span>
             <button class="btn-sample" @click.stop="loadSampleFile">
-              Charger "Proposition_Loi_Réforme_Logement_APL_2026.pdf"
+              Charger "Proposition_Loi_Réforme_Logement_APL_2026.txt"
             </button>
           </div>
         </div>
@@ -213,8 +213,8 @@ const formatSize = (bytes) => {
 
 const loadSampleFile = () => {
   const sampleContent = "Proposition de loi nº 1482 relative au soutien au pouvoir d'achat par la réévaluation des aides personnalisées au logement (APL)..."
-  const blob = new Blob([sampleContent], { type: 'application/pdf' })
-  const mockFile = new File([blob], 'Proposition_Loi_Réforme_Logement_APL_2026.pdf', { type: 'application/pdf' })
+  const blob = new Blob([sampleContent], { type: 'text/plain' })
+  const mockFile = new File([blob], 'Proposition_Loi_Réforme_Logement_APL_2026.txt', { type: 'text/plain' })
   uploadedFiles.value.push(mockFile)
 }
 
