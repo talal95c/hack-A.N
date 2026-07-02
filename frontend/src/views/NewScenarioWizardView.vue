@@ -46,7 +46,29 @@
             />
 
             <div class="drop-content">
-              <span class="drop-icon" style="font-family: monospace; font-size: 32px; color: #94A3B8;">+</span>
+              <!-- Architectural 3D Glassmorphism Animated Folder -->
+              <div class="folder-3d-wrap">
+                <div class="folder-back"></div>
+                <div class="folder-docs">
+                  <div class="doc-sheet doc-1">
+                    <div class="doc-line w-60"></div>
+                    <div class="doc-line w-80"></div>
+                    <div class="doc-line w-40"></div>
+                  </div>
+                  <div class="doc-sheet doc-2">
+                    <div class="doc-line w-70"></div>
+                    <div class="doc-line w-50"></div>
+                    <div class="doc-line w-80"></div>
+                  </div>
+                  <div class="doc-sheet doc-3">
+                    <div class="doc-line w-80"></div>
+                    <div class="doc-line w-60"></div>
+                    <div class="doc-line w-50"></div>
+                  </div>
+                </div>
+                <div class="folder-front-glass"></div>
+              </div>
+
               <p class="drop-main-text">
                 <strong>Glissez-déposez vos fichiers législatifs ici</strong> ou <span class="link-text">parcourez</span>
               </p>
@@ -92,28 +114,16 @@
             />
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label>Groupe Parlementaire / Auteur</label>
-              <select v-model="form.author">
-                <option value="EPR">EPR (Ensemble pour la République)</option>
-                <option value="LFI-NFP">LFI-NFP (La France Insoumise)</option>
-                <option value="RN">RN (Rassemblement National)</option>
-                <option value="SOC">SOC (Socialistes et apparentés)</option>
-                <option value="DR">DR (Droite Républicaine)</option>
-                <option value="Gouvernement">Projet de loi gouvernemental</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Domaine de calcul</label>
-              <select v-model="form.openfiscaModel">
-                <option value="logement_apl">Aides au logement (APL)</option>
-                <option value="impot_revenu">Impôt sur le revenu et prestations</option>
-                <option value="transition_energ">Taxe carbone & Chèque énergie</option>
-                <option value="custom">Calcul personnalisé (13 régions)</option>
-              </select>
-            </div>
+          <div class="form-group">
+            <label>Groupe Parlementaire / Auteur</label>
+            <select v-model="form.author">
+              <option value="EPR">EPR (Ensemble pour la République)</option>
+              <option value="LFI-NFP">LFI-NFP (La France Insoumise)</option>
+              <option value="RN">RN (Rassemblement National)</option>
+              <option value="SOC">SOC (Socialistes et apparentés)</option>
+              <option value="DR">DR (Droite Républicaine)</option>
+              <option value="Gouvernement">Projet de loi gouvernemental</option>
+            </select>
           </div>
 
           <div class="form-group">
@@ -126,16 +136,17 @@
           </div>
 
           <div class="form-footer">
-            <div class="status-tip">
-              <span class="dot-green"></span>
-              <span>Moteur prêt pour le calcul en direct</span>
-            </div>
             <button 
-              class="btn-submit-simulation" 
+              class="btn-black-pill" 
               :disabled="uploadedFiles.length === 0 && !form.title"
               @click="launchSimulation"
             >
-              <span>Lancer une simulation avec les agents IA →</span>
+              <span class="btn-text">Lancer une simulation avec les agents IA</span>
+              <span class="btn-icon-circle">
+                <svg class="btn-arrow-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#000000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
             </button>
           </div>
         </div>
@@ -158,7 +169,6 @@ const uploadedFiles = ref([])
 const form = reactive({
   title: 'Proposition de Loi : Réforme du barème APL 2026',
   author: 'EPR',
-  openfiscaModel: 'logement_apl',
   requirement: "Analyser l'impact d'une revalorisation forfaitaire de +15€ des APL pour les étudiants en zone tendue et son accueil au sein des 577 sièges."
 })
 
@@ -209,7 +219,7 @@ const loadSampleFile = () => {
 }
 
 const launchSimulation = () => {
-  const fullReq = `[${form.author}] ${form.title} (Domaine de calcul: ${form.openfiscaModel}) - ${form.requirement}`
+  const fullReq = `[${form.author}] ${form.title} - ${form.requirement}`
   setPendingUpload(uploadedFiles.value, fullReq)
   
   // Navigate to Circuit A (MainView.vue) to generate ontology and launch simulation with AI agents
@@ -347,31 +357,145 @@ const launchSimulation = () => {
 /* Drop Zone */
 .drop-zone {
   border: 2px dashed #CBD5E1;
-  background: #F8FAFC;
-  border-radius: 20px;
-  padding: 64px 32px;
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 24px;
+  padding: 56px 32px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 280px;
+  min-height: 320px;
+  position: relative;
+  overflow: hidden;
 }
 
 .drop-zone:hover, .drop-zone.is-dragging {
-  border-color: #000000;
-  background: #F1F5F9;
+  border-color: #0F172A;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+  transform: translateY(-4px);
 }
 
 .hidden-file-input { display: none; }
 
-.drop-icon {
-  font-size: 52px;
-  display: block;
-  margin-bottom: 20px;
+/* 3D Glassmorphism Folder Graphic Inspired by Reference */
+.folder-3d-wrap {
+  position: relative;
+  width: 140px;
+  height: 126px;
+  margin: 0 auto 32px auto;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drop-zone:hover .folder-3d-wrap {
+  transform: translateY(-8px) scale(1.05);
+}
+
+.folder-back {
+  position: absolute;
+  bottom: 0;
+  left: 6px;
+  width: 128px;
+  height: 108px;
+  background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%);
+  border-radius: 20px;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.22);
+}
+
+.folder-docs {
+  position: absolute;
+  bottom: 14px;
+  left: 18px;
+  width: 104px;
+  height: 96px;
+}
+
+.doc-sheet {
+  position: absolute;
+  bottom: 0;
+  width: 82px;
+  height: 78px;
+  background: #FFFFFF;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.doc-line {
+  height: 4px;
+  background: #F1F5F9;
+  border-radius: 2px;
+}
+
+.doc-line.w-80 { width: 80%; }
+.doc-line.w-70 { width: 70%; }
+.doc-line.w-60 { width: 60%; }
+.doc-line.w-50 { width: 50%; }
+.doc-line.w-40 { width: 40%; }
+
+.doc-1 {
+  left: 4px;
+  transform: rotate(-8deg);
+  z-index: 1;
+}
+
+.doc-2 {
+  left: 16px;
+  transform: rotate(8deg);
+  z-index: 2;
+}
+
+.doc-3 {
+  left: 10px;
+  transform: rotate(0deg) translateY(-4px);
+  z-index: 3;
+}
+
+/* Motion Design: Hover Animation Fanning Out Documents */
+.drop-zone:hover .doc-1 {
+  transform: rotate(-16deg) translate(-14px, -20px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.drop-zone:hover .doc-2 {
+  transform: rotate(16deg) translate(14px, -20px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.drop-zone:hover .doc-3 {
+  transform: rotate(0deg) translateY(-32px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.folder-front-glass {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 140px;
+  height: 68px;
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-radius: 18px;
+  box-shadow: 0 10px 36px rgba(15, 23, 42, 0.14);
+  z-index: 10;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drop-zone:hover .folder-front-glass {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: #FFFFFF;
+  box-shadow: 0 14px 44px rgba(15, 23, 42, 0.2);
 }
 
 .drop-main-text {
@@ -503,12 +627,6 @@ const launchSimulation = () => {
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
 }
 
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
 .form-footer {
   margin-top: auto;
   padding-top: 32px;
@@ -518,49 +636,101 @@ const launchSimulation = () => {
   gap: 18px;
 }
 
-.status-tip {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: #64748B;
-  font-weight: 500;
-}
-
-.dot-green {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #10B981;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
-}
-
-.btn-submit-simulation {
+.btn-black-pill {
+  position: relative;
   background: #000000;
   color: #FFFFFF;
   border: none;
-  padding: 18px 24px;
+  padding: 8px 8px 8px 28px;
   border-radius: 9999px;
-  font-size: 16px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15.5px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+  transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Framer Motion style light sweep shimmer effect */
+.btn-black-pill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, 0.2) 50%, transparent 80%);
+  transition: left 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.btn-black-pill:hover:not(:disabled)::after {
+  left: 100%;
+}
+
+.btn-text {
+  position: relative;
+  z-index: 2;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-black-pill:hover:not(:disabled) .btn-text {
+  transform: translateX(6px);
+}
+
+.btn-black-pill:hover:not(:disabled) {
+  background: #262626;
+  transform: translateY(-5px) scale(1.025);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+}
+
+.btn-black-pill:active:not(:disabled) {
+  transform: translateY(-1px) scale(0.985);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+  transition: all 0.15s ease;
+}
+
+.btn-icon-circle {
+  position: relative;
+  z-index: 2;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: #000000;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.btn-submit-simulation:hover:not(:disabled) {
-  background: #1E293B;
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+.btn-black-pill:hover:not(:disabled) .btn-icon-circle {
+  transform: scale(1.15) rotate(-12deg);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
-.btn-submit-simulation:disabled {
+.btn-arrow-svg {
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-black-pill:hover:not(:disabled) .btn-arrow-svg {
+  transform: translateX(3px) scale(1.1);
+}
+
+.btn-black-pill:disabled {
   background: #94A3B8;
   cursor: not-allowed;
   opacity: 0.7;
+  box-shadow: none;
 }
 
 .motion-item {

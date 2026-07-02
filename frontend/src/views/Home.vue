@@ -329,6 +329,7 @@ onMounted(() => {
 }
 
 .btn-black-pill {
+  position: relative;
   background: #000000;
   color: #FFFFFF;
   border: none;
@@ -342,18 +343,54 @@ onMounted(() => {
   align-items: center;
   gap: 18px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
+  transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 20;
+  overflow: hidden;
+}
+
+/* Framer Motion style light sweep shimmer effect */
+.btn-black-pill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, 0.2) 50%, transparent 80%);
+  transition: left 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.btn-black-pill:hover::after {
+  left: 100%;
+}
+
+.btn-text {
+  position: relative;
+  z-index: 2;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-black-pill:hover .btn-text {
+  transform: translateX(6px);
 }
 
 .btn-black-pill:hover {
-  background: #111827;
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.32);
+  background: #262626;
+  transform: translateY(-5px) scale(1.025);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+}
+
+.btn-black-pill:active {
+  transform: translateY(-1px) scale(0.985);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+  transition: all 0.15s ease;
 }
 
 .btn-icon-circle {
+  position: relative;
+  z-index: 2;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -364,20 +401,22 @@ onMounted(() => {
   justify-content: center;
   font-size: 18px;
   font-weight: 700;
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .btn-black-pill:hover .btn-icon-circle {
-  transform: scale(1.08);
+  transform: scale(1.15) rotate(-12deg);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
-.btn-arrow {
+.btn-arrow, .btn-arrow-svg {
   display: inline-block;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.btn-black-pill:hover .btn-arrow {
-  transform: translateX(3px);
+.btn-black-pill:hover .btn-arrow, .btn-black-pill:hover .btn-arrow-svg {
+  transform: translateX(3px) scale(1.1);
 }
 
 .btn-white-pill {

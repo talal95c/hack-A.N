@@ -325,4 +325,57 @@ pre,
   color: #FFFFFF !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
+
+/* Terminal / System Logs Background Watermark Logo */
+.system-logs {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.system-logs::before {
+  content: '' !important;
+  position: absolute !important;
+  right: 5% !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 180px !important;
+  height: 180px !important;
+  background-image: url('./assets/logo/miropolis-logo-white.png') !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  opacity: 0.16 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+.system-logs .log-header,
+.system-logs .log-content {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* System Dashboard / Feed Watermark Logo */
+.scroll-container,
+.timeline-feed {
+  position: relative !important;
+}
+
+.scroll-container::before,
+.timeline-feed::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 360px !important;
+  height: 360px !important;
+  background-image: url('./assets/logo/miropolis-logo-black.png') !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  opacity: 0.08 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
 </style>
